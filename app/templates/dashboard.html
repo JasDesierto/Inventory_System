@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero__content card">
+        <p class="eyebrow">Inventory overview</p>
+        <h1>Daily office stock at a glance.</h1>
+        <p class="lede">Review critical supply counts, open the next task quickly, and keep recent stock activity visible for the team.</p>
+        <div class="action-row">
+            <a class="button button--primary" href="{{ url_for('inventory.add_supply_view') }}">Add New Supply</a>
+            <a class="button" href="{{ url_for('inventory.restock_supply_view') }}">Restock Supply</a>
+            <a class="button" href="{{ url_for('inventory.issue_supply_view') }}">Issue Supply</a>
+            <a class="button button--ghost" href="{{ url_for('inventory.inventory_list') }}">View Inventory</a>
+            {% if current_user.role == 'admin' %}
+                <a class="button button--ghost" href="{{ url_for('inventory.analytics') }}">View Analytics</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="hero__panel card card--contrast">
+        <p class="eyebrow">Live summary</p>
+        <div class="stat-grid stat-grid--hero">
+            <article class="stat-card">
+                <span>Total items</span>
+                <strong>{{ summary.total_items }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>Total units</span>
+                <strong>{{ summary.total_stock_units }}</strong>
+            </article>
+            <article class="stat-card stat-card--warning">
+                <span>Low stock</span>
+                <strong>{{ summary.low_stock_count }}</strong>
+            </article>
+            <article class="stat-card stat-card--danger">
+                <span>Out of stock</span>
+                <strong>{{ summary.out_of_stock_count }}</strong>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-grid">
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Recent movement</p>
+            <h2>Latest transactions</h2>
+        </div>
+        <div class="timeline">
+            {% for transaction in summary.recent_transactions %}
+                <div class="timeline__item">
+                    <div class="timeline__meta">
+                        <span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">
+                            {{ 'Stock in' if transaction.transaction_type == 'in' else 'Stock out' }}
+                        </span>
+                        <time>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
+                    </div>
+                    <strong>{{ transaction.supply.item_name }}</strong>
+                    <p>{{ transaction.quantity }} {{ transaction.supply.unit }} by {{ transaction.performer.full_name }}</p>
+                </div>
+            {% else %}
+                <p class="empty-state">No transactions yet.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Attention needed</p>
+            <h2>Low stock items</h2>
+        </div>
+        <div class="compact-list">
+            {% for supply in low_stock_items %}
+                <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
+                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <div>
+                        <strong>{{ supply.item_name }}</strong>
+                        <span>{{ supply.current_quantity }} {{ supply.unit }} left</span>
+                    </div>
+                    <span class="badge badge--warning">Min {{ supply.minimum_quantity }}</span>
+                </a>
+            {% else %}
+                <p class="empty-state">No low stock items right now.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="card card--wide">
+        <div class="section-heading">
+            <p class="eyebrow">Usage signal</p>
+            <h2>Most issued items</h2>
+        </div>
+        <div class="ranking-list">
+            {% for row in top_issued %}
+                <div class="ranking-item">
+                    <div>
+                        <strong>{{ row.supply.item_name }}</strong>
+                        <p>{{ row.supply.category or 'Uncategorized' }} · {{ row.supply.location or 'Unassigned' }}</p>
+                    </div>
+                    <span>{{ row.issued_total }} issued</span>
+                </div>
+            {% else %}
+                <p class="empty-state">Issue activity will appear here once stock moves out.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block title %}Transaction History | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Audit log</p>
+        <h1>Complete transaction history.</h1>
+    </div>
+</section>
+<section class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Supply</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Previous</th>
+                    <th>New</th>
+                    <th>Remarks</th>
+                    <th>User</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.supply.item_name }}</td>
+                        <td><span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span></td>
+                        <td>{{ transaction.quantity }}</td>
+                        <td>{{ transaction.previous_quantity }}</td>
+                        <td>{{ transaction.new_quantity }}</td>
+                        <td>{{ transaction.remarks or '—' }}</td>
+                        <td>{{ transaction.performer.full_name }}</td>
+                        <td>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-state">No transaction history yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}Add Supply | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">New stock record</p>
+        <h1>Add a brand-new supply item.</h1>
+    </div>
+</section>
+<section class="form-layout">
+    <form class="card form-stack" method="post" enctype="multipart/form-data">
+        <div class="section-heading">
+            <p class="eyebrow">Item details</p>
+            <h2>Supply information</h2>
+        </div>
+        <div class="field-grid">
+            <label class="field">
+                <span>Item name</span>
+                <input type="text" name="item_name" value="{{ request.form.get('item_name', '') }}" required>
+            </label>
+            <label class="field">
+                <span>Category</span>
+                <input type="text" name="category" value="{{ request.form.get('category', '') }}">
+            </label>
+            <label class="field field--full">
+                <span>Description</span>
+                <textarea name="description" rows="4" required>{{ request.form.get('description', '') }}</textarea>
+            </label>
+            <label class="field">
+                <span>Unit of measure</span>
+                <input type="text" name="unit" value="{{ request.form.get('unit', '') }}" placeholder="boxes, reams, pcs" required>
+            </label>
+            <label class="field">
+                <span>Location</span>
+                <input type="text" name="location" value="{{ request.form.get('location', '') }}">
+            </label>
+            <label class="field">
+                <span>Opening quantity</span>
+                <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
+            </label>
+            <label class="field">
+                <span>Minimum quantity</span>
+                <input type="number" name="minimum_quantity" min="0" value="{{ request.form.get('minimum_quantity', 0) }}" required>
+            </label>
+            <label class="field field--full">
+                <span>Remarks</span>
+                <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+            </label>
+        </div>
+        <div class="section-heading">
+            <p class="eyebrow">Required capture</p>
+            <h2>Upload or take a photo</h2>
+        </div>
+        <label class="field">
+            <span>Item photo</span>
+            <input type="file" name="photo" accept="image/*" capture="environment" required data-image-input data-preview-target="#add-photo-preview">
+            <small>Mobile devices can open the camera directly from this field.</small>
+        </label>
+        <div class="image-preview" id="add-photo-preview">
+            <span>Image preview will appear here.</span>
+        </div>
+        <button class="button button--primary" type="submit">Save New Supply</button>
+    </form>
+</section>
+{% endblock %}

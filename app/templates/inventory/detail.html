@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block title %}{{ supply.item_name }} | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="detail-layout">
+    <article class="card detail-hero">
+        <img class="detail-hero__image" src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+        <div class="detail-hero__content">
+            <p class="eyebrow">{{ supply.category or 'Uncategorized' }}</p>
+            <h1>{{ supply.item_name }}</h1>
+            <p class="lede">{{ supply.description }}</p>
+            <div class="badge-row">
+                <span class="badge badge--{{ 'danger' if supply.status == 'out_of_stock' else 'warning' if supply.status == 'low_stock' else 'success' }}">{{ supply.status_label }}</span>
+                <span class="badge badge--neutral">{{ supply.location or 'Unassigned' }}</span>
+            </div>
+            <div class="stat-grid">
+                <article class="stat-card">
+                    <span>Current stock</span>
+                    <strong>{{ supply.current_quantity }} {{ supply.unit }}</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Minimum stock</span>
+                    <strong>{{ supply.minimum_quantity }} {{ supply.unit }}</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Created</span>
+                    <strong>{{ supply.created_at.strftime("%d %b %Y %H:%M") }}</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Updated</span>
+                    <strong>{{ supply.updated_at.strftime("%d %b %Y %H:%M") }}</strong>
+                </article>
+            </div>
+            <div class="action-row">
+                <a class="button" href="{{ url_for('inventory.restock_supply_view', supply_id=supply.id) }}">Restock</a>
+                <a class="button button--primary" href="{{ url_for('inventory.issue_supply_view', supply_id=supply.id) }}">Issue</a>
+                <a class="button button--ghost" href="{{ url_for('inventory.inventory_list') }}">Back to Inventory</a>
+            </div>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Transaction trail</p>
+            <h2>History for this item</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>Previous</th>
+                        <th>New</th>
+                        <th>Remarks</th>
+                        <th>User</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in supply.transactions %}
+                        <tr>
+                            <td><span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span></td>
+                            <td>{{ transaction.quantity }}</td>
+                            <td>{{ transaction.previous_quantity }}</td>
+                            <td>{{ transaction.new_quantity }}</td>
+                            <td>{{ transaction.remarks or '—' }}</td>
+                            <td>{{ transaction.performer.full_name }}</td>
+                            <td>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty-state">No transaction history yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

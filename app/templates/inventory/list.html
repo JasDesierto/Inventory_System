@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block title %}Inventory | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Inventory browser</p>
+        <h1>Search, filter, and preview supplies fast.</h1>
+    </div>
+    <div class="action-row">
+        <a class="button button--primary" href="{{ url_for('inventory.add_supply_view') }}">Add New Supply</a>
+        <a class="button" href="{{ url_for('inventory.restock_supply_view') }}">Restock</a>
+        <a class="button" href="{{ url_for('inventory.issue_supply_view') }}">Issue</a>
+    </div>
+</section>
+
+<section class="workspace workspace--inventory" data-inventory-browser data-endpoint="{{ url_for('inventory.supply_api') }}">
+    <aside class="card filter-panel">
+        <div class="section-heading">
+            <p class="eyebrow">Filters</p>
+            <h2>Refine results</h2>
+        </div>
+        <form id="inventory-filter-form" class="form-stack">
+            <label class="field">
+                <span>Search</span>
+                <input type="search" name="q" value="{{ filters.q }}" placeholder="Item, description, category, or location">
+            </label>
+            <label class="field">
+                <span>Category</span>
+                <select name="category">
+                    <option value="">All categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}" {% if filters.category == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="field">
+                <span>Location</span>
+                <select name="location">
+                    <option value="">All locations</option>
+                    {% for location in locations %}
+                        <option value="{{ location }}" {% if filters.location == location %}selected{% endif %}>{{ location }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="toggle">
+                <input type="checkbox" name="low_stock" value="1" {% if filters.low_stock %}checked{% endif %}>
+                <span>Low stock only</span>
+            </label>
+            <label class="toggle">
+                <input type="checkbox" name="out_of_stock" value="1" {% if filters.out_of_stock %}checked{% endif %}>
+                <span>Out of stock only</span>
+            </label>
+        </form>
+    </aside>
+
+    <div class="card browser-panel">
+        <div class="browser-panel__header">
+            <div>
+                <p class="eyebrow">Results</p>
+                <h2 id="inventory-result-count">{{ supplies|length }} items</h2>
+            </div>
+        </div>
+        <div id="inventory-results" class="result-list"></div>
+    </div>
+
+    <aside class="card preview-panel is-desktop" id="inventory-preview"></aside>
+</section>
+
+<div class="drawer" id="inventory-drawer" aria-hidden="true">
+    <div class="drawer__scrim" data-drawer-close></div>
+    <div class="drawer__panel">
+        <button class="drawer__close" type="button" data-drawer-close>Close</button>
+        <div id="inventory-drawer-content"></div>
+    </div>
+</div>
+
+<script id="inventory-data" type="application/json">{{ supplies_json|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/inventory.js') }}" defer></script>
+{% endblock %}

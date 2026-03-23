@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block title %}Analytics | {{ app_name }}{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Inventory insights</p>
+        <h1>Low stock alerts, issue trends, and recent movement.</h1>
+    </div>
+</section>
+<section class="dashboard-grid">
+    <article class="card card--wide">
+        <div class="section-heading">
+            <p class="eyebrow">Monthly stock-out totals</p>
+            <h2>Issued quantity by month</h2>
+        </div>
+        <canvas id="monthly-out-chart" height="140"></canvas>
+    </article>
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Most issued</p>
+            <h2>Top issued supplies</h2>
+        </div>
+        <canvas id="top-issued-chart" height="220"></canvas>
+    </article>
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Low stock</p>
+            <h2>Needs attention</h2>
+        </div>
+        <div class="compact-list">
+            {% for supply in low_stock_items %}
+                <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
+                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <div>
+                        <strong>{{ supply.item_name }}</strong>
+                        <span>{{ supply.current_quantity }} {{ supply.unit }} remaining</span>
+                    </div>
+                </a>
+            {% else %}
+                <p class="empty-state">No low stock items.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="card">
+        <div class="section-heading">
+            <p class="eyebrow">Out of stock</p>
+            <h2>Unavailable items</h2>
+        </div>
+        <div class="compact-list">
+            {% for supply in out_of_stock_items %}
+                <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
+                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <div>
+                        <strong>{{ supply.item_name }}</strong>
+                        <span>{{ supply.location or 'Unassigned' }}</span>
+                    </div>
+                    <span class="badge badge--danger">0 left</span>
+                </a>
+            {% else %}
+                <p class="empty-state">No out-of-stock items.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="card card--wide">
+        <div class="section-heading">
+            <p class="eyebrow">Recent movement</p>
+            <h2>Latest stock transactions</h2>
+        </div>
+        <div class="timeline">
+            {% for transaction in recent_movement %}
+                <div class="timeline__item">
+                    <div class="timeline__meta">
+                        <span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span>
+                        <time>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
+                    </div>
+                    <strong>{{ transaction.supply.item_name }}</strong>
+                    <p>{{ transaction.quantity }} {{ transaction.supply.unit }} · {{ transaction.performer.full_name }}</p>
+                </div>
+            {% else %}
+                <p class="empty-state">No stock movement recorded yet.</p>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+<script id="analytics-data" type="application/json">{{ chart_data|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}" defer></script>
+{% endblock %}

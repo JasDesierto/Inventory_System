@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block title %}Restock Supply | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Existing item flow</p>
+        <h1>Restock an existing supply without duplicating records.</h1>
+    </div>
+</section>
+<section class="workspace workspace--form">
+    <form class="card form-stack" method="post" enctype="multipart/form-data" data-restock-form>
+        <div class="section-heading">
+            <p class="eyebrow">Select supply</p>
+            <h2>Choose the item to restock</h2>
+        </div>
+        <label class="field">
+            <span>Supply item</span>
+            <select name="supply_id" required data-restock-select>
+                <option value="">Select a supply</option>
+                {% for supply in supplies %}
+                    <option value="{{ supply.id }}" {% if selected_supply_id == supply.id %}selected{% endif %}>
+                        {{ supply.item_name }} · {{ supply.current_quantity }} {{ supply.unit }} · {{ supply.location or 'Unassigned' }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="field">
+            <span>Restock quantity</span>
+            <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
+        </label>
+        <label class="field">
+            <span>Remarks</span>
+            <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+        </label>
+        <label class="field">
+            <span>New stock photo</span>
+            <input type="file" name="photo" accept="image/*" capture="environment" required data-image-input data-preview-target="#restock-photo-preview">
+            <small>A fresh stock log must include a photo.</small>
+        </label>
+        <div class="image-preview" id="restock-photo-preview">
+            <span>Image preview will appear here.</span>
+        </div>
+        <button class="button button--primary" type="submit">Confirm Restock</button>
+    </form>
+    <aside class="card preview-panel" id="restock-preview"></aside>
+</section>
+<script id="restock-data" type="application/json">{{ supplies_json|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/restock.js') }}" defer></script>
+{% endblock %}
