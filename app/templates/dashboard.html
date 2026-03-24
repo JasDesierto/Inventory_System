@@ -73,7 +73,7 @@
         <div class="compact-list">
             {% for supply in low_stock_items %}
                 <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
                     <div>
                         <strong>{{ supply.item_name }}</strong>
                         <span>{{ supply.current_quantity }} {{ supply.unit }} left</span>

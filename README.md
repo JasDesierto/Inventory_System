@@ -11,7 +11,10 @@ flask --app run:app seed
 python run.py
 ```
 
-Default seeded users:
+Set `SECRET_KEY` before running outside local development.
 
-- `admin / admin123` (`Jas Desierto`)
-- `staff / staff123` (`staff`)
+`flask seed` now prints the generated credentials it creates. To keep predictable seed passwords, set:
+
+- `SEED_ADMIN_PASSWORD`
+- `SEED_ERLA_PASSWORD`
+- `SEED_APRIL_PASSWORD`

@@ -78,5 +78,5 @@
 <script id="inventory-data" type="application/json">{{ supplies_json|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/inventory.js') }}" defer></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/inventory.js') }}" defer></script>
 {% endblock %}

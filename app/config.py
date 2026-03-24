@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -12,11 +13,19 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-    UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
+    UPLOAD_FOLDER = str(BASE_DIR.parent / "instance" / "uploads")
+    PROTECTED_UPLOAD_PREFIX = "protected_uploads/"
     DEFAULT_PHOTO_PATH = "uploads/placeholder-supply.svg"
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     SEED_ADMIN_USERNAME = os.environ.get("SEED_ADMIN_USERNAME", "admin")
-    SEED_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "admin123")
+    SEED_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD")
     SEED_ERLA_USERNAME = os.environ.get("SEED_ERLA_USERNAME", "Erla")
-    SEED_ERLA_PASSWORD = os.environ.get("SEED_ERLA_PASSWORD", "Erla123")
+    SEED_ERLA_PASSWORD = os.environ.get("SEED_ERLA_PASSWORD")
     SEED_APRIL_USERNAME = os.environ.get("SEED_APRIL_USERNAME", "April")
-    SEED_APRIL_PASSWORD = os.environ.get("SEED_APRIL_PASSWORD", "April123")
+    SEED_APRIL_PASSWORD = os.environ.get("SEED_APRIL_PASSWORD")

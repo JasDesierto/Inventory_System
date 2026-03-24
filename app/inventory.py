@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from .decorators import role_required
@@ -17,14 +17,19 @@ from .services import (
     restock_supply,
     search_supplies,
 )
-from .utils.uploads import UploadError, delete_uploaded_image, save_form_image, save_uploaded_image
+from .utils.uploads import (
+    UploadError,
+    delete_uploaded_image,
+    photo_url_for,
+    save_form_image,
+    save_uploaded_image,
+)
 
 inventory_bp = Blueprint("inventory", __name__)
 
 
 def _photo_url(photo_path):
-    filename = photo_path or "uploads/placeholder-supply.svg"
-    return url_for("static", filename=filename)
+    return photo_url_for(photo_path)
 
 
 def _status_tone(status):
@@ -36,6 +41,7 @@ def _status_tone(status):
 
 
 def _supply_payload(supply):
+    # The frontend only gets the values it needs, plus a resolved photo URL that respects access control.
     return {
         "id": supply.id,
         "item_name": supply.item_name,
@@ -73,6 +79,12 @@ def _distinct_values(column):
         .order_by(column.asc())
         .all()
     ]
+
+
+@inventory_bp.route("/uploads/<path:filename>")
+@login_required
+def uploaded_photo(filename):
+    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename, max_age=0)
 
 
 @inventory_bp.route("/dashboard")

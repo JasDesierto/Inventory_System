@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Analytics | {{ app_name }}{% endblock %}
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 {% block content %}
 <section class="section-banner">
@@ -34,7 +34,7 @@
         <div class="compact-list">
             {% for supply in low_stock_items %}
                 <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
                     <div>
                         <strong>{{ supply.item_name }}</strong>
                         <span>{{ supply.current_quantity }} {{ supply.unit }} remaining</span>
@@ -53,7 +53,7 @@
         <div class="compact-list">
             {% for supply in out_of_stock_items %}
                 <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                    <img src="{{ url_for('static', filename=supply.photo_path) }}" alt="{{ supply.item_name }}">
+                    <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
                     <div>
                         <strong>{{ supply.item_name }}</strong>
                         <span>{{ supply.location or 'Unassigned' }}</span>
@@ -89,5 +89,5 @@
 <script id="analytics-data" type="application/json">{{ chart_data|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/analytics.js') }}" defer></script>
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/analytics.js') }}" defer></script>
 {% endblock %}

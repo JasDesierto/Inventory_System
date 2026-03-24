@@ -41,6 +41,8 @@
     </div>
     <div class="auth-panel auth-panel--form">
         <form class="form-stack" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_url or '' }}">
             <div class="section-heading">
                 <p class="eyebrow">Sign in</p>
                 <h2>Inventory access</h2>
@@ -60,7 +62,7 @@
                 <p>Use your assigned account to access the system.</p>
             {% else %}
                 <p>No users exist yet.</p>
-                <p class="muted">Run <code>flask seed</code> to create the default admin and staff accounts.</p>
+                <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts.</p>
             {% endif %}
         </div>
     </div>

@@ -1,11 +1,12 @@
 import click
+from secrets import token_urlsafe
 
 from .extensions import db
 from .models import StockTransaction, Supply, User
 from .services.inventory import add_new_supply, issue_supply, restock_supply
 
 
-def _upsert_seed_user(*, username, full_name, role, password):
+def _upsert_seed_user(*, username, full_name, role, password=None, update_password=False):
     user = User.query.filter_by(username=username).first()
     if not user:
         user = User(username=username)
@@ -13,7 +14,8 @@ def _upsert_seed_user(*, username, full_name, role, password):
 
     user.full_name = full_name
     user.role = role
-    user.set_password(password)
+    if password and (update_password or not user.password_hash):
+        user.set_password(password)
     return user
 
 
@@ -26,23 +28,38 @@ def _merge_legacy_staff(legacy_user, replacement_user):
 
 
 def _seed_users(app):
+    configured_admin_password = app.config["SEED_ADMIN_PASSWORD"]
+    configured_erla_password = app.config["SEED_ERLA_PASSWORD"]
+    configured_april_password = app.config["SEED_APRIL_PASSWORD"]
+
+    admin_existing = User.query.filter_by(username=app.config["SEED_ADMIN_USERNAME"]).first()
+    erla_existing = User.query.filter_by(username=app.config["SEED_ERLA_USERNAME"]).first()
+    april_existing = User.query.filter_by(username=app.config["SEED_APRIL_USERNAME"]).first()
+
+    admin_password = configured_admin_password or (None if admin_existing else token_urlsafe(12))
+    erla_password = configured_erla_password or (None if erla_existing else token_urlsafe(12))
+    april_password = configured_april_password or (None if april_existing else token_urlsafe(12))
+
     admin = _upsert_seed_user(
         username=app.config["SEED_ADMIN_USERNAME"],
         full_name="Jas Desierto",
         role="admin",
-        password=app.config["SEED_ADMIN_PASSWORD"],
+        password=admin_password,
+        update_password=bool(configured_admin_password or not admin_existing),
     )
     erla = _upsert_seed_user(
         username=app.config["SEED_ERLA_USERNAME"],
         full_name="Erla",
         role="staff",
-        password=app.config["SEED_ERLA_PASSWORD"],
+        password=erla_password,
+        update_password=bool(configured_erla_password or not erla_existing),
     )
     april = _upsert_seed_user(
         username=app.config["SEED_APRIL_USERNAME"],
         full_name="April",
         role="staff",
-        password=app.config["SEED_APRIL_PASSWORD"],
+        password=april_password,
+        update_password=bool(configured_april_password or not april_existing),
     )
 
     legacy_staff = User.query.filter_by(username="staff").first()
@@ -51,13 +68,18 @@ def _seed_users(app):
             legacy_staff.full_name = "Erla"
             legacy_staff.role = "staff"
             legacy_staff.username = app.config["SEED_ERLA_USERNAME"]
-            legacy_staff.set_password(app.config["SEED_ERLA_PASSWORD"])
+            if erla_password and (configured_erla_password or not erla_existing):
+                legacy_staff.set_password(erla_password)
             erla = legacy_staff
         else:
             _merge_legacy_staff(legacy_staff, erla)
 
     db.session.commit()
-    return admin, erla, april
+    return admin, erla, april, {
+        "admin": (admin.username, admin_password),
+        "erla": (erla.username, erla_password),
+        "april": (april.username, april_password),
+    }
 
 
 def _seed_inventory(admin, erla, april):
@@ -140,12 +162,32 @@ def register_cli(app):
             User.query.delete()
             db.session.commit()
 
-        admin, erla, april = _seed_users(app)
+        admin, erla, april, credentials = _seed_users(app)
         _seed_inventory(admin, erla, april)
 
+        credential_parts = []
+        generated_accounts = []
+        unchanged_accounts = []
+        for label, (username, password) in credentials.items():
+            if password:
+                credential_parts.append(f"{label.title()} login: {username}/{password}")
+                if not app.config[f"SEED_{label.upper()}_PASSWORD"]:
+                    generated_accounts.append(label.title())
+            else:
+                credential_parts.append(f"{label.title()} login: {username}/(unchanged)")
+                unchanged_accounts.append(label.title())
+
+        guidance_parts = []
+        if generated_accounts:
+            guidance_parts.append(
+                "Generated passwords were used for: " + ", ".join(generated_accounts) + "."
+            )
+        if unchanged_accounts:
+            guidance_parts.append(
+                "Existing passwords were kept for: " + ", ".join(unchanged_accounts) + "."
+            )
         click.echo(
-            "Seed complete. Admin login: "
-            f"{app.config['SEED_ADMIN_USERNAME']}/{app.config['SEED_ADMIN_PASSWORD']} | "
-            f"Erla login: {app.config['SEED_ERLA_USERNAME']}/{app.config['SEED_ERLA_PASSWORD']} | "
-            f"April login: {app.config['SEED_APRIL_USERNAME']}/{app.config['SEED_APRIL_PASSWORD']}"
+            "Seed complete. "
+            + " | ".join(credential_parts)
+            + (" " + " ".join(guidance_parts) if guidance_parts else "")
         )

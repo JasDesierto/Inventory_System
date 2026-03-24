@@ -11,6 +11,7 @@
 </section>
 <section class="form-layout">
     <form class="card form-stack" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <div class="section-heading">
             <p class="eyebrow">Item details</p>
             <h2>Supply information</h2>

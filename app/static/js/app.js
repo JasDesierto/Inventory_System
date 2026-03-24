@@ -53,6 +53,19 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("page-is-leaving");
     });
 
+    // Confirmation is handled centrally so generated forms do not need inline JS handlers.
+    document.addEventListener("submit", (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const confirmationMessage = form.dataset.confirm;
+        if (confirmationMessage && !window.confirm(confirmationMessage)) {
+            event.preventDefault();
+        }
+    });
+
     document.addEventListener("click", (event) => {
         if (event.defaultPrevented || event.button !== 0) {
             return;

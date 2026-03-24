@@ -9,11 +9,19 @@ if (inventoryRoot && inventoryScript) {
     const resultCount = document.getElementById("inventory-result-count");
     const drawer = document.getElementById("inventory-drawer");
     const drawerContent = document.getElementById("inventory-drawer-content");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
     let items = JSON.parse(inventoryScript.textContent || "[]");
     let selectedId = items[0] ? items[0].id : null;
     let debounceTimer = null;
 
     const badgeClass = (tone) => `badge badge--${tone || "neutral"}`;
+    const escapeHtml = (value) =>
+        String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
 
     const renderPreviewMarkup = (item) => {
         if (!item) {
@@ -22,34 +30,36 @@ if (inventoryRoot && inventoryScript) {
 
         const deleteAction = item.delete_url
             ? `
-                <form method="post" action="${item.delete_url}" onsubmit="return window.confirm('Delete this stock item and its transaction history? This cannot be undone.');">
+                <form method="post" action="${escapeHtml(item.delete_url)}" data-confirm="Delete this stock item and its transaction history? This cannot be undone.">
+                    <input type="hidden" name="_csrf_token" value="${escapeHtml(csrfToken)}">
                     <button class="button button--danger" type="submit">Delete</button>
                 </form>
             `
             : "";
 
+        // Inventory values come from the database, so escape them before inserting any HTML string.
         return `
             <div class="preview-shell">
-                <img src="${item.photo_url}" alt="${item.item_name}">
+                <img src="${escapeHtml(item.photo_url)}" alt="${escapeHtml(item.item_name)}">
                 <div>
                     <div class="badge-row">
-                        <span class="${badgeClass(item.status_tone)}">${item.status_label}</span>
-                        <span class="badge badge--neutral">${item.category}</span>
+                        <span class="${badgeClass(item.status_tone)}">${escapeHtml(item.status_label)}</span>
+                        <span class="badge badge--neutral">${escapeHtml(item.category)}</span>
                     </div>
-                    <h3>${item.item_name}</h3>
-                    <p>${item.description}</p>
+                    <h3>${escapeHtml(item.item_name)}</h3>
+                    <p>${escapeHtml(item.description)}</p>
                 </div>
                 <dl>
-                    <div><dt>Current stock</dt><dd>${item.current_quantity} ${item.unit}</dd></div>
-                    <div><dt>Minimum stock</dt><dd>${item.minimum_quantity} ${item.unit}</dd></div>
-                    <div><dt>Location</dt><dd>${item.location}</dd></div>
-                    <div><dt>Last updated</dt><dd>${item.updated_at}</dd></div>
+                    <div><dt>Current stock</dt><dd>${escapeHtml(item.current_quantity)} ${escapeHtml(item.unit)}</dd></div>
+                    <div><dt>Minimum stock</dt><dd>${escapeHtml(item.minimum_quantity)} ${escapeHtml(item.unit)}</dd></div>
+                    <div><dt>Location</dt><dd>${escapeHtml(item.location)}</dd></div>
+                    <div><dt>Last updated</dt><dd>${escapeHtml(item.updated_at)}</dd></div>
                 </dl>
                 <div class="action-row">
-                    <a class="button button--primary" href="${item.issue_url}">Issue</a>
-                    <a class="button" href="${item.restock_url}">Restock</a>
+                    <a class="button button--primary" href="${escapeHtml(item.issue_url)}">Issue</a>
+                    <a class="button" href="${escapeHtml(item.restock_url)}">Restock</a>
                     ${deleteAction}
-                    <a class="button button--ghost" href="${item.detail_url}">Open details</a>
+                    <a class="button button--ghost" href="${escapeHtml(item.detail_url)}">Open details</a>
                 </div>
             </div>
         `;
@@ -79,13 +89,13 @@ if (inventoryRoot && inventoryScript) {
         resultsContainer.innerHTML = items
             .map(
                 (item) => `
-                    <button class="result-card ${item.id === selectedId ? "is-selected" : ""}" type="button" data-supply-id="${item.id}">
-                        <img src="${item.photo_url}" alt="${item.item_name}">
+                    <button class="result-card ${item.id === selectedId ? "is-selected" : ""}" type="button" data-supply-id="${escapeHtml(item.id)}">
+                        <img src="${escapeHtml(item.photo_url)}" alt="${escapeHtml(item.item_name)}">
                         <div class="result-card__meta">
-                            <strong>${item.item_name}</strong>
-                            <p>${item.category} · ${item.current_quantity} ${item.unit}</p>
+                            <strong>${escapeHtml(item.item_name)}</strong>
+                            <p>${escapeHtml(item.category)} · ${escapeHtml(item.current_quantity)} ${escapeHtml(item.unit)}</p>
                         </div>
-                        <span class="${badgeClass(item.status_tone)}">${item.status_label}</span>
+                        <span class="${badgeClass(item.status_tone)}">${escapeHtml(item.status_label)}</span>
                     </button>
                 `
             )

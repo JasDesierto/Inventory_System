@@ -1,10 +1,19 @@
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, url_for
+from flask import Flask, redirect, render_template, request, url_for
+from flask_login import current_user
 
 from .cli import register_cli
 from .config import Config
 from .extensions import db, login_manager
+from .security import (
+    build_csp_header,
+    ensure_request_nonce,
+    get_csp_nonce,
+    get_csrf_token,
+    validate_csrf,
+)
+from .utils.uploads import migrate_public_uploads, photo_url_for
 
 
 def create_app(config_object=None):
@@ -21,7 +30,30 @@ def create_app(config_object=None):
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
+
+    @app.before_request
+    def apply_request_security():
+        ensure_request_nonce()
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            validate_csrf()
+
+    @app.after_request
+    def apply_response_security(response):
+        if request.endpoint != "static":
+            response.headers["Content-Security-Policy"] = build_csp_header()
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Referrer-Policy"] = "same-origin"
+            response.headers["Permissions-Policy"] = "camera=(self)"
+
+        if request.endpoint != "static" and current_user.is_authenticated:
+            # Authenticated pages and protected images should not be cached on shared machines.
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0, private"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+        return response
 
     from .auth import auth_bp
     from .inventory import inventory_bp
@@ -45,6 +77,18 @@ def create_app(config_object=None):
             403,
         )
 
+    @app.errorhandler(400)
+    def bad_request(error):
+        return (
+            render_template(
+                "error.html",
+                error_code=400,
+                title="Bad request",
+                message=getattr(error, "description", "The request could not be processed."),
+            ),
+            400,
+        )
+
     @app.errorhandler(404)
     def not_found(_error):
         return (
@@ -57,13 +101,33 @@ def create_app(config_object=None):
             404,
         )
 
+    @app.errorhandler(413)
+    def payload_too_large(_error):
+        return (
+            render_template(
+                "error.html",
+                error_code=413,
+                title="File too large",
+                message="The uploaded file exceeds the allowed size limit.",
+            ),
+            413,
+        )
+
     @app.context_processor
     def inject_shell():
-        return {"app_name": app.config["APP_NAME"]}
+        return {
+            "app_name": app.config["APP_NAME"],
+            "csrf_token": get_csrf_token,
+            "csp_nonce": get_csp_nonce(),
+            "photo_url_for": photo_url_for,
+        }
 
     register_cli(app)
 
     with app.app_context():
         db.create_all()
+        from .models import Supply
+
+        migrate_public_uploads(db, Supply)
 
     return app
