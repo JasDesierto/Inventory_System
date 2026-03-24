@@ -1,6 +1,7 @@
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
+from .constants import SUPPLY_CATEGORIES, display_supply_category
 from .decorators import role_required
 from .extensions import db
 from .models import StockTransaction, Supply
@@ -22,7 +23,6 @@ from .utils.uploads import (
     delete_uploaded_image,
     photo_url_for,
     save_form_image,
-    save_uploaded_image,
 )
 
 inventory_bp = Blueprint("inventory", __name__)
@@ -46,7 +46,7 @@ def _supply_payload(supply):
         "id": supply.id,
         "item_name": supply.item_name,
         "description": supply.description,
-        "category": supply.category or "Uncategorized",
+        "category": display_supply_category(supply.category),
         "unit": supply.unit,
         "current_quantity": supply.current_quantity,
         "minimum_quantity": supply.minimum_quantity,
@@ -67,6 +67,40 @@ def _supply_payload(supply):
             if current_user.is_authenticated and current_user.is_admin
             else None
         ),
+    }
+
+
+def _stock_card_payload(supply):
+    transactions = (
+        StockTransaction.query.filter_by(supply_id=supply.id)
+        .order_by(StockTransaction.created_at.asc(), StockTransaction.id.asc())
+        .all()
+    )
+    ledger_rows = []
+    for transaction in transactions:
+        is_receipt = transaction.transaction_type == "in"
+        ledger_rows.append(
+            {
+                "id": transaction.id,
+                "date": transaction.created_at.strftime("%B %d, %Y"),
+                "reference": f'{"RCPT" if is_receipt else "ISS"}-{transaction.id:05d}',
+                "receipt_quantity": transaction.quantity if is_receipt else "",
+                "issue_quantity": transaction.quantity if not is_receipt else "",
+                "office": transaction.remarks or "",
+                "balance_quantity": transaction.new_quantity,
+                "days_to_consume": "",
+                "transaction_type": transaction.transaction_type,
+                "timestamp": transaction.created_at.strftime("%Y-%m-%d %H:%M"),
+            }
+        )
+
+    return {
+        **_supply_payload(supply),
+        "entity_name": "DILG IX - LGCDD",
+        "appendix_label": "Appendix 58",
+        "stock_no": "",
+        "reorder_point": supply.minimum_quantity,
+        "ledger_rows": ledger_rows,
     }
 
 
@@ -124,7 +158,7 @@ def inventory_list():
         filters=filters,
         supplies=supplies,
         supplies_json=supply_payloads,
-        categories=_distinct_values(Supply.category),
+        categories=SUPPLY_CATEGORIES,
         locations=_distinct_values(Supply.location),
     )
 
@@ -158,7 +192,7 @@ def add_supply_view():
                 delete_uploaded_image(photo_path)
             flash(str(exc), "danger")
 
-    return render_template("inventory/add_supply.html")
+    return render_template("inventory/add_supply.html", categories=SUPPLY_CATEGORIES)
 
 
 @inventory_bp.route("/inventory/restock", methods=["GET", "POST"])
@@ -166,21 +200,17 @@ def add_supply_view():
 def restock_supply_view():
     selected_supply_id = request.args.get("supply_id", type=int)
     if request.method == "POST":
-        photo_path = None
         try:
-            photo_path = save_uploaded_image(request.files.get("photo"))
             supply = restock_supply(
                 supply_id=request.form.get("supply_id", type=int),
+                category=request.form.get("category"),
                 quantity=request.form.get("quantity"),
-                photo_path=photo_path,
                 remarks=request.form.get("remarks"),
                 performed_by=current_user,
             )
             flash(f"{supply.item_name} was restocked successfully.", "success")
             return redirect(url_for("inventory.supply_detail", supply_id=supply.id))
-        except (UploadError, InventoryError) as exc:
-            if photo_path:
-                delete_uploaded_image(photo_path)
+        except InventoryError as exc:
             flash(str(exc), "danger")
             selected_supply_id = request.form.get("supply_id", type=int)
 
@@ -188,6 +218,7 @@ def restock_supply_view():
     supply_payloads = [_supply_payload(supply) for supply in supplies]
     return render_template(
         "inventory/restock_supply.html",
+        categories=SUPPLY_CATEGORIES,
         supplies=supplies,
         supplies_json=supply_payloads,
         selected_supply_id=selected_supply_id,
@@ -247,6 +278,22 @@ def transaction_history():
     return render_template("inventory/history.html", transactions=transactions)
 
 
+@inventory_bp.route("/inventory/stock-card")
+@login_required
+def stock_card_view():
+    selected_supply_id = request.args.get("supply_id", type=int)
+    initial_category = request.args.get("category", "").strip()
+    supplies = search_supplies()
+    supply_payloads = [_supply_payload(supply) for supply in supplies]
+    return render_template(
+        "inventory/stock_card.html",
+        categories=SUPPLY_CATEGORIES,
+        supplies_json=supply_payloads,
+        selected_supply_id=selected_supply_id,
+        initial_category=initial_category,
+    )
+
+
 @inventory_bp.route("/analytics")
 @login_required
 @role_required("admin")
@@ -285,3 +332,10 @@ def supply_api():
         limit=200,
     )
     return jsonify([_supply_payload(supply) for supply in supplies])
+
+
+@inventory_bp.route("/api/supplies/<int:supply_id>/stock-card")
+@login_required
+def supply_stock_card_api(supply_id):
+    supply = Supply.query.get_or_404(supply_id)
+    return jsonify(_stock_card_payload(supply))

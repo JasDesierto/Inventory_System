@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import case, desc, func, or_
 
+from ..constants import SUPPLY_CATEGORIES
 from ..extensions import db
 from ..models import StockTransaction, Supply
 
@@ -36,6 +37,17 @@ def _status_for(quantity, minimum_quantity):
     return "in_stock"
 
 
+def _to_category(value, *, required=False):
+    category = _normalize_text(value)
+    if not category:
+        if required:
+            raise InventoryError("Category is required.")
+        return None
+    if category not in SUPPLY_CATEGORIES:
+        raise InventoryError("Please choose a valid category.")
+    return category
+
+
 def add_new_supply(
     *,
     item_name,
@@ -51,7 +63,7 @@ def add_new_supply(
 ):
     item_name = _normalize_text(item_name)
     description = _normalize_text(description)
-    category = _normalize_text(category)
+    category = _to_category(category, required=True)
     unit = _normalize_text(unit)
     location = _normalize_text(location)
     photo_path = _normalize_text(photo_path)
@@ -110,13 +122,10 @@ def add_new_supply(
     return supply
 
 
-def restock_supply(*, supply_id, quantity, photo_path, remarks, performed_by):
+def restock_supply(*, supply_id, category, quantity, remarks, performed_by):
     quantity = _to_int(quantity, "Restock quantity", minimum=1)
-    photo_path = _normalize_text(photo_path)
+    category = _to_category(category, required=True)
     remarks = _normalize_text(remarks)
-
-    if not photo_path:
-        raise InventoryError("A supply photo is required when logging new stock.")
 
     supply = Supply.query.get(supply_id)
     if not supply:
@@ -126,7 +135,7 @@ def restock_supply(*, supply_id, quantity, photo_path, remarks, performed_by):
     new_quantity = previous_quantity + quantity
 
     supply.current_quantity = new_quantity
-    supply.photo_path = photo_path
+    supply.category = category
     supply.status = _status_for(new_quantity, supply.minimum_quantity)
 
     transaction = StockTransaction(
@@ -213,7 +222,16 @@ def search_supplies(
         )
 
     if category:
-        query = query.filter(Supply.category == category)
+        if category == "Others":
+            query = query.filter(
+                or_(
+                    Supply.category == "Others",
+                    Supply.category.is_(None),
+                    Supply.category == "",
+                )
+            )
+        else:
+            query = query.filter(Supply.category == category)
     if location:
         query = query.filter(Supply.location == location)
 

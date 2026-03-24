@@ -23,7 +23,12 @@
             </label>
             <label class="field">
                 <span>Category</span>
-                <input type="text" name="category" value="{{ request.form.get('category', '') }}">
+                <select name="category" required>
+                    <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
             </label>
             <label class="field field--full">
                 <span>Description</span>

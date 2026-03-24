@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}Print Stock Card | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Stock card</p>
+        <h1>Choose a category, inspect a stock item, and print its ledger.</h1>
+        <p class="section-banner__lede">This view mirrors the stock card form with live balances pulled from recorded restocks and issuances.</p>
+    </div>
+</section>
+
+<section
+    class="workspace workspace--stock-card"
+    data-stock-card-browser
+    data-selected-supply-id="{{ selected_supply_id or '' }}"
+    data-initial-category="{{ initial_category }}"
+>
+    <aside class="card browser-panel">
+        <div class="section-heading">
+            <p class="eyebrow">Find stock</p>
+            <h2>Filter by category</h2>
+        </div>
+        <label class="field">
+            <span>Category</span>
+            <select id="stock-card-category">
+                <option value="">All categories</option>
+                {% for category in categories %}
+                    <option value="{{ category }}" {% if initial_category == category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="field">
+            <span>Search</span>
+            <input type="search" id="stock-card-search" placeholder="Search item, description, category, or location">
+        </label>
+        <div id="stock-card-results" class="result-list result-list--compact"></div>
+    </aside>
+
+    <aside class="card preview-panel" id="stock-card-preview">
+        <div class="detail-panel detail-panel--empty">
+            <p>Select an item to see its stock summary and printable card.</p>
+        </div>
+    </aside>
+
+    <article class="card stock-card-print-host">
+        <div class="stock-card-actions">
+            <button class="button button--primary" type="button" id="stock-card-print-button" disabled>Print Stock Card</button>
+        </div>
+        <div id="stock-card-sheet" class="stock-card-sheet stock-card-sheet--empty">
+            <p>Select a stock item from the list to load its printable stock card.</p>
+        </div>
+    </article>
+</section>
+
+<script id="stock-card-data" type="application/json">{{ supplies_json|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/stock_card.js') }}" defer></script>
+{% endblock %}

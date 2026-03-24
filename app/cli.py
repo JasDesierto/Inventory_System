@@ -89,7 +89,7 @@ def _seed_inventory(admin, erla, april):
     pens = add_new_supply(
         item_name="Pilot G2 Gel Pen",
         description="Retractable 0.7mm black gel pens for general office use.",
-        category="Writing",
+        category="Writing Instruments",
         unit="boxes",
         quantity=24,
         minimum_quantity=8,
@@ -101,7 +101,7 @@ def _seed_inventory(admin, erla, april):
     paper = add_new_supply(
         item_name="A4 Copy Paper",
         description="80gsm multipurpose copy paper for printers and copiers.",
-        category="Paper",
+        category="Paper Products",
         unit="reams",
         quantity=18,
         minimum_quantity=6,
@@ -113,7 +113,7 @@ def _seed_inventory(admin, erla, april):
     toner = add_new_supply(
         item_name="HP 17A Toner",
         description="Black toner cartridge for finance and admin department printers.",
-        category="Printing",
+        category="Printing Supplies",
         unit="cartridges",
         quantity=4,
         minimum_quantity=3,
@@ -131,8 +131,8 @@ def _seed_inventory(admin, erla, april):
     )
     restock_supply(
         supply_id=paper.id,
+        category=paper.category,
         quantity=6,
-        photo_path="uploads/seed-paper.svg",
         remarks="Monthly procurement",
         performed_by=admin,
     )

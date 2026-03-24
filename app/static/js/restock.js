@@ -2,12 +2,15 @@ const restockDataNode = document.getElementById("restock-data");
 
 if (restockDataNode) {
     const items = JSON.parse(restockDataNode.textContent || "[]");
+    const categoryFilter = document.getElementById("restock-category-filter");
+    const categorySelect = document.getElementById("restock-category");
     const searchInput = document.getElementById("restock-search");
     const results = document.getElementById("restock-results");
     const preview = document.getElementById("restock-preview");
     const hiddenInput = document.getElementById("restock-supply-id");
     const submitButton = document.getElementById("restock-submit");
     let selectedId = hiddenInput.value ? Number(hiddenInput.value) : (items[0] ? items[0].id : null);
+    let lastPreviewSupplyId = categorySelect?.value && selectedId ? selectedId : null;
 
     const escapeHtml = (value) =>
         String(value ?? "")
@@ -17,17 +20,16 @@ if (restockDataNode) {
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#39;");
 
-    const filterItems = (query) => {
-        if (!query) {
-            return items;
-        }
+    const filterItems = (query, category) => {
         const normalized = query.toLowerCase();
-        return items.filter((item) =>
-            [item.item_name, item.description, item.category, item.location]
+        return items.filter((item) => {
+            const matchesCategory = !category || item.category === category;
+            const matchesQuery = !query || [item.item_name, item.description, item.category, item.location]
                 .join(" ")
                 .toLowerCase()
-                .includes(normalized)
-        );
+                .includes(normalized);
+            return matchesCategory && matchesQuery;
+        });
     };
 
     const renderPreview = (item) => {
@@ -59,6 +61,10 @@ if (restockDataNode) {
             </div>
         `;
         hiddenInput.value = item.id;
+        if (item.id !== lastPreviewSupplyId && categorySelect) {
+            categorySelect.value = item.category;
+            lastPreviewSupplyId = item.id;
+        }
         submitButton.disabled = false;
     };
 
@@ -91,9 +97,10 @@ if (restockDataNode) {
         renderPreview(collection.find((item) => item.id === selectedId));
     };
 
-    const syncResults = () => renderResults(filterItems(searchInput.value.trim()));
+    const syncResults = () => renderResults(filterItems(searchInput.value.trim(), categoryFilter?.value || ""));
 
     searchInput.addEventListener("input", syncResults);
+    categoryFilter?.addEventListener("change", syncResults);
     results.addEventListener("click", (event) => {
         const card = event.target.closest("[data-supply-id]");
         if (!card) {
@@ -104,10 +111,13 @@ if (restockDataNode) {
     });
 
     document.getElementById("restock-form").addEventListener("submit", (event) => {
-        if (!hiddenInput.value) {
+        if (!hiddenInput.value || !categorySelect?.value) {
             event.preventDefault();
         }
     });
 
+    if (categoryFilter && items.some((item) => item.id === selectedId)) {
+        categoryFilter.value = items.find((item) => item.id === selectedId)?.category || "";
+    }
     syncResults();
 }

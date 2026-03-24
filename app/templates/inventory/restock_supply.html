@@ -5,7 +5,7 @@
     <div>
         <p class="eyebrow">Existing item flow</p>
         <h1>Restock an existing supply without duplicating records.</h1>
-        <p class="section-banner__lede">Top up an existing item with a fresh photo and maintain a clean, auditable transaction trail.</p>
+        <p class="section-banner__lede">Top up an existing item and maintain a clean, auditable transaction trail without recreating the same stock record.</p>
     </div>
 </section>
 <section class="workspace workspace--issue" data-restock-browser>
@@ -15,12 +15,21 @@
             <h2>Search inventory</h2>
         </div>
         <label class="field">
+            <span>Category</span>
+            <select id="restock-category-filter">
+                <option value="">All categories</option>
+                {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="field">
             <span>Search</span>
             <input type="search" id="restock-search" placeholder="Search name, description, category, or location">
         </label>
         <div id="restock-results" class="result-list result-list--compact"></div>
     </div>
-    <form class="card form-stack" method="post" enctype="multipart/form-data" id="restock-form">
+    <form class="card form-stack" method="post" id="restock-form">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="supply_id" id="restock-supply-id" value="{{ selected_supply_id or '' }}">
         <div class="section-heading">
@@ -31,6 +40,15 @@
             <p>Select an item to see its current stock and restock it.</p>
         </div>
         <label class="field">
+            <span>Category</span>
+            <select name="category" id="restock-category" required>
+                <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
+                {% for category in categories %}
+                    <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="field">
             <span>Restock quantity</span>
             <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
         </label>
@@ -38,14 +56,6 @@
             <span>Remarks</span>
             <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
         </label>
-        <label class="field">
-            <span>New stock photo</span>
-            <input type="file" name="photo" accept="image/*" capture="environment" required data-image-input data-preview-target="#restock-photo-preview">
-            <small>A fresh stock log must include a photo.</small>
-        </label>
-        <div class="image-preview" id="restock-photo-preview">
-            <span>Image preview will appear here.</span>
-        </div>
         <button class="button button--primary" type="submit" id="restock-submit" disabled>Confirm Restock</button>
     </form>
 </section>

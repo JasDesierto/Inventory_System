@@ -5,7 +5,7 @@
     <article class="card detail-hero">
         <img class="detail-hero__image" src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
         <div class="detail-hero__content">
-            <p class="eyebrow">{{ supply.category or 'Uncategorized' }}</p>
+            <p class="eyebrow">{{ supply.category or 'Others' }}</p>
             <h1>{{ supply.item_name }}</h1>
             <p class="lede">{{ supply.description }}</p>
             <div class="badge-row">
@@ -33,6 +33,7 @@
             <div class="action-row">
                 <a class="button" href="{{ url_for('inventory.restock_supply_view', supply_id=supply.id) }}">Restock</a>
                 <a class="button button--primary" href="{{ url_for('inventory.issue_supply_view', supply_id=supply.id) }}">Issue</a>
+                <a class="button" href="{{ url_for('inventory.stock_card_view', supply_id=supply.id, category=supply.category or 'Others') }}">Print Stock Card</a>
                 {% if current_user.is_admin %}
                     <form method="post" action="{{ url_for('inventory.delete_supply_view', supply_id=supply.id) }}" data-confirm="Delete this stock item and its transaction history? This cannot be undone.">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

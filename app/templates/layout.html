@@ -44,8 +44,11 @@
                 <a class="{{ 'is-active' if request.endpoint == 'inventory.restock_supply_view' else '' }}" href="{{ url_for('inventory.restock_supply_view') }}">Restock</a>
                 <a class="{{ 'is-active' if request.endpoint == 'inventory.issue_supply_view' else '' }}" href="{{ url_for('inventory.issue_supply_view') }}">Issue</a>
                 {% if current_user.role == 'admin' %}
-                    <a class="{{ 'is-active' if request.endpoint == 'inventory.analytics' else '' }}" href="{{ url_for('inventory.analytics') }}">Analytics</a>
                     <a class="{{ 'is-active' if request.endpoint == 'inventory.transaction_history' else '' }}" href="{{ url_for('inventory.transaction_history') }}">History</a>
+                    <a class="{{ 'is-active' if request.endpoint == 'inventory.stock_card_view' else '' }}" href="{{ url_for('inventory.stock_card_view') }}">Print Stock Card</a>
+                    <a class="{{ 'is-active' if request.endpoint == 'inventory.analytics' else '' }}" href="{{ url_for('inventory.analytics') }}">Analytics</a>
+                {% else %}
+                    <a class="{{ 'is-active' if request.endpoint == 'inventory.stock_card_view' else '' }}" href="{{ url_for('inventory.stock_card_view') }}">Print Stock Card</a>
                 {% endif %}
             </nav>
             <div class="topbar__meta">
