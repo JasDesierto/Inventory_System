@@ -1,10 +1,12 @@
 {% extends "layout.html" %}
 {% block title %}Add Supply | {{ app_name }}{% endblock %}
 {% block content %}
+{% set photo_source = request.form.get('photo_source', 'upload') %}
 <section class="section-banner">
     <div>
         <p class="eyebrow">New stock record</p>
         <h1>Add a brand-new supply item.</h1>
+        <p class="section-banner__lede">Create a polished item record with complete stock details, a reliable photo, and a clean first transaction.</p>
     </div>
 </section>
 <section class="form-layout">
@@ -49,15 +51,52 @@
         </div>
         <div class="section-heading">
             <p class="eyebrow">Required capture</p>
-            <h2>Upload or take a photo</h2>
+            <h2>Attach a file or capture from camera</h2>
         </div>
-        <label class="field">
-            <span>Item photo</span>
-            <input type="file" name="photo" accept="image/*" capture="environment" required data-image-input data-preview-target="#add-photo-preview">
-            <small>Mobile devices can open the camera directly from this field.</small>
-        </label>
+        <section class="capture-shell" data-photo-capture-root data-preview-empty="Choose a file or capture a photo to preview it here.">
+            <input type="hidden" name="photo_source" value="{{ photo_source }}" data-capture-mode-input>
+            <input type="hidden" name="captured_photo_data" value="" data-captured-photo>
+            <div class="capture-choice" role="tablist" aria-label="Choose photo source">
+                <button class="capture-choice__button{% if photo_source != 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="upload" aria-pressed="{{ 'false' if photo_source == 'camera' else 'true' }}">
+                    Attach file
+                </button>
+                <button class="capture-choice__button{% if photo_source == 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="camera" aria-pressed="{{ 'true' if photo_source == 'camera' else 'false' }}">
+                    Use camera
+                </button>
+            </div>
+            <div class="capture-panel{% if photo_source != 'camera' %} is-active{% endif %}" data-capture-panel="upload">
+                <label class="field">
+                    <span>Item photo file</span>
+                    <input
+                        type="file"
+                        name="photo"
+                        accept="image/*"
+                        {% if photo_source != 'camera' %}required{% endif %}
+                        data-image-input
+                        data-upload-input
+                        data-preview-target="#add-photo-preview"
+                    >
+                    <small>Select an existing photo from the device.</small>
+                </label>
+            </div>
+            <div class="capture-panel{% if photo_source == 'camera' %} is-active{% endif %}" data-capture-panel="camera">
+                <div class="camera-stage">
+                    <video class="camera-stage__video" data-camera-video playsinline muted></video>
+                    <div class="camera-stage__placeholder" data-camera-placeholder>
+                        <strong>Live camera preview</strong>
+                        <span>Allow camera access, then capture the item when it is in frame.</span>
+                    </div>
+                </div>
+                <div class="camera-actions">
+                    <button class="button" type="button" data-camera-start>Start Camera</button>
+                    <button class="button button--primary" type="button" data-camera-capture disabled>Capture Photo</button>
+                    <button class="button button--ghost" type="button" data-camera-retake hidden>Retake</button>
+                </div>
+                <p class="camera-status" data-camera-status>Choose camera mode to capture directly from the current device.</p>
+            </div>
+        </section>
         <div class="image-preview" id="add-photo-preview">
-            <span>Image preview will appear here.</span>
+            <span>Choose a file or capture a photo to preview it here.</span>
         </div>
         <button class="button button--primary" type="submit">Save New Supply</button>
     </form>

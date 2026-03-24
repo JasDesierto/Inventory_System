@@ -5,6 +5,7 @@
     <div>
         <p class="eyebrow">Audit log</p>
         <h1>Complete transaction history.</h1>
+        <p class="section-banner__lede">Browse every stock movement in a cleaner ledger designed for review, verification, and administrative follow-up.</p>
     </div>
 </section>
 <section class="card">
@@ -30,7 +31,7 @@
                         <td>{{ transaction.quantity }}</td>
                         <td>{{ transaction.previous_quantity }}</td>
                         <td>{{ transaction.new_quantity }}</td>
-                        <td>{{ transaction.remarks or '—' }}</td>
+                        <td>{{ transaction.remarks or '-' }}</td>
                         <td>{{ transaction.performer.full_name }}</td>
                         <td>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</td>
                     </tr>

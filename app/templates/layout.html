@@ -27,7 +27,8 @@
     {% if current_user.is_authenticated %}
         <header class="topbar">
             <a class="brand" href="{{ url_for('inventory.dashboard') }}">
-                <span class="brand__title brand__title--full">LGCDD Office Inventory System</span>
+                <span class="brand__eyebrow">LGCDD Office</span>
+                <span class="brand__title brand__title--full">Inventory <span class="brand__title-accent">System</span></span>
             </a>
             <nav class="topnav">
                 <a class="{{ 'is-active' if request.endpoint == 'inventory.dashboard' else '' }}" href="{{ url_for('inventory.dashboard') }}">Dashboard</a>

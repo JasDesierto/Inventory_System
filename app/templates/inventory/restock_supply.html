@@ -5,6 +5,7 @@
     <div>
         <p class="eyebrow">Existing item flow</p>
         <h1>Restock an existing supply without duplicating records.</h1>
+        <p class="section-banner__lede">Top up an existing item with a fresh photo and maintain a clean, auditable transaction trail.</p>
     </div>
 </section>
 <section class="workspace workspace--form">
@@ -19,7 +20,7 @@
                 <option value="">Select a supply</option>
                 {% for supply in supplies %}
                     <option value="{{ supply.id }}" {% if selected_supply_id == supply.id %}selected{% endif %}>
-                        {{ supply.item_name }} · {{ supply.current_quantity }} {{ supply.unit }} · {{ supply.location or 'Unassigned' }}
+                        {{ supply.item_name }} - {{ supply.current_quantity }} {{ supply.unit }} - {{ supply.location or 'Unassigned' }}
                     </option>
                 {% endfor %}
             </select>

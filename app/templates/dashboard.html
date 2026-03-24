@@ -3,7 +3,11 @@
 {% block content %}
 <section class="hero">
     <div class="hero__content card">
-        <p class="eyebrow">Inventory overview</p>
+        <div class="hero__branding">
+            <p class="hero__brand-eyebrow">LGCDD Office</p>
+            <div class="hero__brand-title">Inventory <span>System</span></div>
+            <p class="hero__brand-note">Professional stock control for the Local Government Capability Development Division.</p>
+        </div>
         <h1>Daily office stock at a glance.</h1>
         <p class="lede">Review critical supply counts, open the next task quickly, and keep recent stock activity visible for the team.</p>
         <div class="action-row">
@@ -92,7 +96,7 @@
                 <div class="ranking-item">
                     <div>
                         <strong>{{ row.supply.item_name }}</strong>
-                        <p>{{ row.supply.category or 'Uncategorized' }} · {{ row.supply.location or 'Unassigned' }}</p>
+                        <p>{{ row.supply.category or 'Uncategorized' }} - {{ row.supply.location or 'Unassigned' }}</p>
                     </div>
                     <span>{{ row.issued_total }} issued</span>
                 </div>

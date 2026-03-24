@@ -16,5 +16,7 @@ class Config:
     DEFAULT_PHOTO_PATH = "uploads/placeholder-supply.svg"
     SEED_ADMIN_USERNAME = os.environ.get("SEED_ADMIN_USERNAME", "admin")
     SEED_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "admin123")
-    SEED_STAFF_USERNAME = os.environ.get("SEED_STAFF_USERNAME", "staff")
-    SEED_STAFF_PASSWORD = os.environ.get("SEED_STAFF_PASSWORD", "staff123")
+    SEED_ERLA_USERNAME = os.environ.get("SEED_ERLA_USERNAME", "Erla")
+    SEED_ERLA_PASSWORD = os.environ.get("SEED_ERLA_PASSWORD", "Erla123")
+    SEED_APRIL_USERNAME = os.environ.get("SEED_APRIL_USERNAME", "April")
+    SEED_APRIL_PASSWORD = os.environ.get("SEED_APRIL_PASSWORD", "April123")

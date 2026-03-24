@@ -16,7 +16,7 @@ from .services import (
     restock_supply,
     search_supplies,
 )
-from .utils.uploads import UploadError, delete_uploaded_image, save_uploaded_image
+from .utils.uploads import UploadError, delete_uploaded_image, save_form_image, save_uploaded_image
 
 inventory_bp = Blueprint("inventory", __name__)
 
@@ -117,7 +117,10 @@ def add_supply_view():
     if request.method == "POST":
         photo_path = None
         try:
-            photo_path = save_uploaded_image(request.files.get("photo"))
+            photo_path = save_form_image(
+                request.files.get("photo"),
+                request.form.get("captured_photo_data"),
+            )
             supply = add_new_supply(
                 item_name=request.form.get("item_name"),
                 description=request.form.get("description"),

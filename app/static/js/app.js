@@ -1,6 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
     let pageIsLeaving = false;
     const loginEntryStorageKey = "app-entry-from-login";
+    const pageTransitionDelayMs = 28;
+
+    const setPreviewMarkup = (target, markup) => {
+        if (!target) {
+            return;
+        }
+
+        target.innerHTML = markup;
+        target.classList.add("is-filled");
+    };
+
+    const resetPreviewMarkup = (target, message) => {
+        if (!target) {
+            return;
+        }
+
+        target.innerHTML = `<span>${message}</span>`;
+        target.classList.remove("is-filled");
+    };
 
     const startPageTransition = () => {
         if (pageIsLeaving) {
@@ -56,10 +75,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         window.setTimeout(() => {
             window.location.assign(link.href);
-        }, 55);
+        }, pageTransitionDelayMs);
     });
 
     document.addEventListener("submit", (event) => {
+        if (event.defaultPrevented) {
+            return;
+        }
+
         const form = event.target;
         if (!(form instanceof HTMLFormElement)) {
             return;
@@ -74,10 +97,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
+            const actionUrl = new URL(form.action || window.location.href, window.location.href);
             if (document.body.classList.contains("body--landing")) {
-                const actionUrl = new URL(form.action || window.location.href, window.location.href);
                 if (actionUrl.pathname.includes("/auth/login")) {
                     sessionStorage.setItem(loginEntryStorageKey, "1");
+                    if (event.submitter instanceof HTMLElement) {
+                        event.submitter.classList.add("is-loading");
+                        event.submitter.setAttribute("aria-disabled", "true");
+                    }
                 }
             }
         } catch (_error) {
@@ -95,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             HTMLFormElement.prototype.submit.call(form);
-        }, 55);
+        }, pageTransitionDelayMs);
     });
 
     document.querySelectorAll("[data-image-input]").forEach((input) => {
@@ -103,16 +130,235 @@ document.addEventListener("DOMContentLoaded", () => {
             const targetSelector = input.getAttribute("data-preview-target");
             const target = targetSelector ? document.querySelector(targetSelector) : null;
             const file = input.files && input.files[0];
+            const captureRoot = input.closest("[data-photo-capture-root]");
+            const capturedInput = captureRoot ? captureRoot.querySelector("[data-captured-photo]") : null;
+
             if (!target || !file) {
+                const emptyMessage =
+                    captureRoot?.getAttribute("data-preview-empty") || "Image preview will appear here.";
+                resetPreviewMarkup(target, emptyMessage);
                 return;
+            }
+
+            if (capturedInput) {
+                capturedInput.value = "";
             }
 
             const reader = new FileReader();
             reader.onload = (event) => {
-                target.innerHTML = `<img src="${event.target.result}" alt="Selected image preview">`;
+                setPreviewMarkup(target, `<img src="${event.target.result}" alt="Selected image preview">`);
             };
             reader.readAsDataURL(file);
         });
+    });
+
+    document.querySelectorAll("[data-photo-capture-root]").forEach((root) => {
+        const form = root.closest("form");
+        const modeInput = root.querySelector("[data-capture-mode-input]");
+        const capturedInput = root.querySelector("[data-captured-photo]");
+        const uploadInput = root.querySelector("[data-upload-input]");
+        const previewTargetSelector = uploadInput?.getAttribute("data-preview-target");
+        const previewTarget = previewTargetSelector ? document.querySelector(previewTargetSelector) : null;
+        const emptyPreviewMessage =
+            root.getAttribute("data-preview-empty") || "Choose a file or capture a photo to preview it here.";
+        const modeButtons = Array.from(root.querySelectorAll("[data-capture-mode-button]"));
+        const panels = Array.from(root.querySelectorAll("[data-capture-panel]"));
+        const video = root.querySelector("[data-camera-video]");
+        const placeholder = root.querySelector("[data-camera-placeholder]");
+        const startButton = root.querySelector("[data-camera-start]");
+        const captureButton = root.querySelector("[data-camera-capture]");
+        const retakeButton = root.querySelector("[data-camera-retake]");
+        const status = root.querySelector("[data-camera-status]");
+
+        let stream = null;
+
+        const stopStream = () => {
+            if (!stream) {
+                return;
+            }
+
+            stream.getTracks().forEach((track) => track.stop());
+            stream = null;
+        };
+
+        const setStatus = (message) => {
+            if (status) {
+                status.textContent = message;
+            }
+        };
+
+        const syncButtons = ({ canCapture = false, canRetake = false } = {}) => {
+            if (captureButton) {
+                captureButton.disabled = !canCapture;
+            }
+            if (retakeButton) {
+                retakeButton.hidden = !canRetake;
+            }
+        };
+
+        const updateMode = (nextMode) => {
+            if (!modeInput) {
+                return;
+            }
+
+            modeInput.value = nextMode;
+            modeButtons.forEach((button) => {
+                const isActive = button.dataset.mode === nextMode;
+                button.classList.toggle("is-active", isActive);
+                button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+            panels.forEach((panel) => {
+                panel.classList.toggle("is-active", panel.dataset.capturePanel === nextMode);
+            });
+
+            if (uploadInput) {
+                uploadInput.required = nextMode === "upload";
+                if (nextMode === "camera") {
+                    uploadInput.value = "";
+                }
+            }
+
+            if (nextMode !== "camera") {
+                if (capturedInput) {
+                    capturedInput.value = "";
+                }
+                stopStream();
+                placeholder?.classList.remove("is-hidden");
+                syncButtons({ canCapture: false, canRetake: false });
+                setStatus("Select a photo file from the current device.");
+                resetPreviewMarkup(previewTarget, emptyPreviewMessage);
+                return;
+            }
+
+            setStatus("Allow camera access, then capture the item.");
+            if (!capturedInput?.value) {
+                placeholder?.classList.remove("is-hidden");
+                resetPreviewMarkup(previewTarget, "Camera capture preview will appear here.");
+                syncButtons({ canCapture: false, canRetake: false });
+            } else {
+                placeholder?.classList.add("is-hidden");
+                syncButtons({ canCapture: false, canRetake: true });
+            }
+        };
+
+        const startCamera = async () => {
+            if (!video) {
+                return;
+            }
+
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setStatus("This browser does not support direct camera capture. Use attach file instead.");
+                return;
+            }
+
+            if (!window.isSecureContext && window.location.hostname !== "localhost") {
+                setStatus("Camera access requires HTTPS or localhost in this browser.");
+                return;
+            }
+
+            stopStream();
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: { ideal: "environment" },
+                    },
+                });
+                video.srcObject = stream;
+                await video.play();
+                placeholder?.classList.add("is-hidden");
+                syncButtons({ canCapture: true, canRetake: Boolean(capturedInput?.value) });
+                setStatus("Camera is live. Frame the item and capture the photo.");
+            } catch (_error) {
+                setStatus("Camera access was blocked or is unavailable on this device.");
+                syncButtons({ canCapture: false, canRetake: Boolean(capturedInput?.value) });
+            }
+        };
+
+        const capturePhoto = () => {
+            if (!video || !capturedInput || !previewTarget || !video.videoWidth || !video.videoHeight) {
+                setStatus("Wait for the camera preview to load before capturing.");
+                return;
+            }
+
+            const maxDimension = 1600;
+            const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+
+            const context = canvas.getContext("2d");
+            if (!context) {
+                setStatus("The browser could not prepare the captured image.");
+                return;
+            }
+
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
+
+            capturedInput.value = dataUrl;
+            setPreviewMarkup(previewTarget, `<img src="${dataUrl}" alt="Captured item preview">`);
+            placeholder?.classList.add("is-hidden");
+            setStatus("Photo captured. Retake if you want a sharper image.");
+            syncButtons({ canCapture: false, canRetake: true });
+            stopStream();
+        };
+
+        const clearCapture = () => {
+            if (capturedInput) {
+                capturedInput.value = "";
+            }
+            syncButtons({ canCapture: false, canRetake: false });
+            placeholder?.classList.remove("is-hidden");
+            resetPreviewMarkup(previewTarget, "Camera capture preview will appear here.");
+            setStatus("Start the camera again to capture a new image.");
+        };
+
+        modeButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                updateMode(button.dataset.mode || "upload");
+            });
+        });
+
+        startButton?.addEventListener("click", () => {
+            updateMode("camera");
+            void startCamera();
+        });
+
+        captureButton?.addEventListener("click", capturePhoto);
+
+        retakeButton?.addEventListener("click", () => {
+            clearCapture();
+            void startCamera();
+        });
+
+        form?.addEventListener("submit", (event) => {
+            const mode = modeInput?.value || "upload";
+            if (mode === "camera") {
+                if (!capturedInput?.value) {
+                    event.preventDefault();
+                    setStatus("Capture a photo before saving the new supply.");
+                }
+                return;
+            }
+
+            if (!uploadInput?.files?.length) {
+                event.preventDefault();
+                resetPreviewMarkup(previewTarget, emptyPreviewMessage);
+            }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopStream();
+                syncButtons({ canCapture: false, canRetake: Boolean(capturedInput?.value) });
+            }
+        });
+
+        window.addEventListener("pagehide", stopStream);
+
+        updateMode(modeInput?.value || "upload");
     });
 
     document.querySelectorAll("[data-video-shell]").forEach((shell) => {
