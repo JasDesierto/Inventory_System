@@ -20,15 +20,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     {% block head %}{% endblock %}
 </head>
-<body class="{% if current_user.is_authenticated %}body--app{% else %}body--landing{% endif %}" data-page="{{ request.endpoint or '' }}">
+{% set use_landing_shell = request.endpoint == 'auth.login' or not current_user.is_authenticated %}
+<body class="{% if use_landing_shell %}body--landing{% else %}body--app{% endif %}" data-page="{{ request.endpoint or '' }}">
     <div class="ambient ambient--left"></div>
     <div class="ambient ambient--right"></div>
     <div class="page-transition-mask" aria-hidden="true"></div>
-    {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated and not use_landing_shell %}
         <header class="topbar">
             <a class="brand" href="{{ url_for('inventory.dashboard') }}">
-                <span class="brand__eyebrow">LGCDD Office</span>
-                <span class="brand__title brand__title--full">Inventory <span class="brand__title-accent">System</span></span>
+                <span class="brand__mark" aria-hidden="true">
+                    <img class="brand__logo" src="{{ url_for('static', filename='media/dilg-logo.png') }}" alt="">
+                </span>
+                <span class="brand__copy">
+                    <span class="brand__title brand__title--full">LGCDD Inventory <span class="brand__title-accent">System</span></span>
+                    <span class="brand__department">DEPARTMENT OF THE INTERIOR AND LOCAL GOVERNMENT IX</span>
+                </span>
             </a>
             <nav class="topnav">
                 <a class="{{ 'is-active' if request.endpoint == 'inventory.dashboard' else '' }}" href="{{ url_for('inventory.dashboard') }}">Dashboard</a>
@@ -52,7 +58,7 @@
             </div>
         </header>
     {% endif %}
-    <main class="page-shell {% if not current_user.is_authenticated %}page-shell--auth{% endif %}">
+    <main class="page-shell {% if use_landing_shell %}page-shell--auth{% endif %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <section class="flash-stack">

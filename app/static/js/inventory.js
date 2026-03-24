@@ -20,6 +20,14 @@ if (inventoryRoot && inventoryScript) {
             return `<div class="detail-panel detail-panel--empty"><p>Select an item to preview its full details.</p></div>`;
         }
 
+        const deleteAction = item.delete_url
+            ? `
+                <form method="post" action="${item.delete_url}" onsubmit="return window.confirm('Delete this stock item and its transaction history? This cannot be undone.');">
+                    <button class="button button--danger" type="submit">Delete</button>
+                </form>
+            `
+            : "";
+
         return `
             <div class="preview-shell">
                 <img src="${item.photo_url}" alt="${item.item_name}">
@@ -40,6 +48,7 @@ if (inventoryRoot && inventoryScript) {
                 <div class="action-row">
                     <a class="button button--primary" href="${item.issue_url}">Issue</a>
                     <a class="button" href="${item.restock_url}">Restock</a>
+                    ${deleteAction}
                     <a class="button button--ghost" href="${item.detail_url}">Open details</a>
                 </div>
             </div>

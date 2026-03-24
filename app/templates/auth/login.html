@@ -12,7 +12,12 @@
         <div class="auth-layout__scrim"></div>
     </div>
     <div class="auth-panel auth-panel--intro">
-        <p class="eyebrow">Office control</p>
+        <div class="auth-panel__brand">
+            <span class="auth-panel__brand-mark" aria-hidden="true">
+                <img class="auth-panel__brand-logo" src="{{ url_for('static', filename='media/dilg-logo.png') }}" alt="">
+            </span>
+            <p class="auth-panel__brand-department">Department of the Interior and Local Government IX</p>
+        </div>
         <h1>
             Local Government Capability Development Division
             <span class="auth-panel__headline-accent">Inventory System</span>

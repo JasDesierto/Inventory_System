@@ -173,6 +173,20 @@ def issue_supply(*, supply_id, quantity, remarks, performed_by):
     return supply
 
 
+def delete_supply(*, supply_id):
+    supply = Supply.query.get(supply_id)
+    if not supply:
+        raise InventoryError("The selected supply does not exist.")
+
+    deleted_supply = {
+        "item_name": supply.item_name,
+        "photo_path": supply.photo_path,
+    }
+    db.session.delete(supply)
+    db.session.commit()
+    return deleted_supply
+
+
 def search_supplies(
     *,
     query_text=None,

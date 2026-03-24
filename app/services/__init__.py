@@ -1,6 +1,7 @@
 from .inventory import (
     InventoryError,
     add_new_supply,
+    delete_supply,
     get_dashboard_summary,
     get_low_stock_items,
     get_monthly_stock_out_totals,
@@ -14,6 +15,7 @@ from .inventory import (
 __all__ = [
     "InventoryError",
     "add_new_supply",
+    "delete_supply",
     "restock_supply",
     "issue_supply",
     "search_supplies",

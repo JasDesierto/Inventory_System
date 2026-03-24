@@ -33,6 +33,11 @@
             <div class="action-row">
                 <a class="button" href="{{ url_for('inventory.restock_supply_view', supply_id=supply.id) }}">Restock</a>
                 <a class="button button--primary" href="{{ url_for('inventory.issue_supply_view', supply_id=supply.id) }}">Issue</a>
+                {% if current_user.is_admin %}
+                    <form method="post" action="{{ url_for('inventory.delete_supply_view', supply_id=supply.id) }}">
+                        <button class="button button--danger" type="submit" onclick="return confirm('Delete this stock item and its transaction history? This cannot be undone.')">Delete</button>
+                    </form>
+                {% endif %}
                 <a class="button button--ghost" href="{{ url_for('inventory.inventory_list') }}">Back to Inventory</a>
             </div>
         </div>

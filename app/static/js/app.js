@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     let pageIsLeaving = false;
     const loginEntryStorageKey = "app-entry-from-login";
-    const pageTransitionDelayMs = 28;
+    const pageTransitionDelayMs = 16;
 
     const setPreviewMarkup = (target, markup) => {
         if (!target) {

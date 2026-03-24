@@ -7,6 +7,7 @@ from .models import StockTransaction, Supply
 from .services import (
     InventoryError,
     add_new_supply,
+    delete_supply,
     get_dashboard_summary,
     get_low_stock_items,
     get_monthly_stock_out_totals,
@@ -55,6 +56,11 @@ def _supply_payload(supply):
         "detail_url": url_for("inventory.supply_detail", supply_id=supply.id),
         "restock_url": url_for("inventory.restock_supply_view", supply_id=supply.id),
         "issue_url": url_for("inventory.issue_supply_view", supply_id=supply.id),
+        "delete_url": (
+            url_for("inventory.delete_supply_view", supply_id=supply.id)
+            if current_user.is_authenticated and current_user.is_admin
+            else None
+        ),
     }
 
 
@@ -209,6 +215,16 @@ def issue_supply_view():
 def supply_detail(supply_id):
     supply = Supply.query.get_or_404(supply_id)
     return render_template("inventory/detail.html", supply=supply, supply_json=_supply_payload(supply))
+
+
+@inventory_bp.route("/inventory/<int:supply_id>/delete", methods=["POST"])
+@login_required
+@role_required("admin")
+def delete_supply_view(supply_id):
+    deleted_supply = delete_supply(supply_id=supply_id)
+    delete_uploaded_image(deleted_supply["photo_path"])
+    flash(f'{deleted_supply["item_name"]} was deleted from inventory.', "success")
+    return redirect(url_for("inventory.inventory_list"))
 
 
 @inventory_bp.route("/inventory/history")

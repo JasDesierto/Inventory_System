@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, url_for
-from flask_login import current_user
 
 from .cli import register_cli
 from .config import Config
@@ -32,8 +31,6 @@ def create_app(config_object=None):
 
     @app.route("/")
     def index():
-        if current_user.is_authenticated:
-            return redirect(url_for("inventory.dashboard"))
         return redirect(url_for("auth.login"))
 
     @app.errorhandler(403)
