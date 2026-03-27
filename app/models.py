@@ -1,4 +1,4 @@
- qfrom datetime import datetime
+from datetime import datetime
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -95,7 +95,9 @@ class StockTransaction(db.Model):
     new_quantity = db.Column(db.Integer, nullable=False)
     remarks = db.Column(db.Text, nullable=True)
     performed_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    created_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, index=True
+    )
 
     supply = db.relationship("Supply", back_populates="transactions")
     performer = db.relationship("User", back_populates="transactions_performed")
