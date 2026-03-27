@@ -1,60 +1,115 @@
 {% extends "layout.html" %}
 {% block title %}Dashboard | {{ app_name }}{% endblock %}
 {% block content %}
+{% set dashboard_metrics = namespace(stock_changes_today=0, newly_out_today=0) %}
+{% for insight in quick_insights %}
+    {% if insight.label == "Stock changes today" %}
+        {% set dashboard_metrics.stock_changes_today = insight.value %}
+    {% elif insight.label == "Newly out today" %}
+        {% set dashboard_metrics.newly_out_today = insight.value %}
+    {% endif %}
+{% endfor %}
+{% set needs_attention = summary.low_stock_count + summary.out_of_stock_count %}
+{% set stable_items = summary.total_items - needs_attention %}
+{% if stable_items < 0 %}
+    {% set stable_items = 0 %}
+{% endif %}
+{% if summary.total_items %}
+    {% set stable_share = (stable_items / summary.total_items * 100) %}
+    {% set low_share = (summary.low_stock_count / summary.total_items * 100) %}
+    {% set out_share = (summary.out_of_stock_count / summary.total_items * 100) %}
+{% else %}
+    {% set stable_share = 0 %}
+    {% set low_share = 0 %}
+    {% set out_share = 0 %}
+{% endif %}
 <section class="dashboard-hero">
     <article class="card dashboard-intro">
         <div class="dashboard-intro__copy">
-            <p class="dashboard-intro__eyebrow">
-                <span class="dashboard-intro__eyebrow-primary">LGCDD Inventory</span>
-                <span class="dashboard-intro__eyebrow-accent">System</span>
-            </p>
             <h1>Dashboard</h1>
-            <p class="dashboard-intro__lede">Monitor stock, recent movement, and items needing restock.</p>
+            <p class="dashboard-intro__lede">Monitor stock health, movement, and urgent restocking actions in one view.</p>
         </div>
         <div class="action-row dashboard-intro__actions">
-            <a class="button button--primary" href="{{ url_for('inventory.add_supply_view') }}">Add New Supply</a>
-            <a class="button" href="{{ url_for('inventory.restock_supply_view') }}">Restock</a>
-            <a class="button" href="{{ url_for('inventory.issue_supply_view') }}">Issue</a>
-            <a class="button button--ghost" href="{{ url_for('inventory.inventory_list') }}">Inventory</a>
+            <a class="button button--primary" href="{{ url_for('inventory.add_supply_view') }}">Record New Item</a>
+            <a class="button" href="{{ url_for('inventory.restock_supply_view') }}">Add Stock</a>
+            <a class="button" href="{{ url_for('inventory.issue_supply_view') }}">Release Stock</a>
+            <a class="button button--ghost" href="{{ url_for('inventory.inventory_list') }}">Review Inventory</a>
             {% if current_user.role == 'admin' %}
-                <a class="button button--ghost" href="{{ url_for('inventory.analytics') }}">Analytics</a>
+                <a class="button button--ghost" href="{{ url_for('inventory.analytics') }}">View Insights</a>
             {% endif %}
         </div>
     </article>
 
     <aside class="card card--contrast dashboard-summary">
         <div class="dashboard-summary__header">
-            <p class="eyebrow">Live summary</p>
-            <span>Current system state</span>
+            <div>
+                <p class="eyebrow">Live summary</p>
+                <span>Inventory status by item count</span>
+            </div>
+            <strong>{{ "{:,}".format(needs_attention) }}</strong>
+            <em>{{ "item needs attention" if needs_attention == 1 else "items need attention" }}</em>
         </div>
-        <div class="dashboard-summary__grid">
-            <article class="stat-card">
+        <div class="dashboard-summary__totals" aria-label="Inventory totals">
+            <div>
                 <span>Total items</span>
-                <strong>{{ summary.total_items }}</strong>
-            </article>
-            <article class="stat-card">
+                <strong>{{ "{:,}".format(summary.total_items) }}</strong>
+            </div>
+            <div>
                 <span>Units on hand</span>
-                <strong>{{ summary.total_stock_units }}</strong>
+                <strong>{{ "{:,}".format(summary.total_stock_units) }}</strong>
+            </div>
+        </div>
+        <div class="dashboard-summary__chart" role="img" aria-label="Horizontal bar chart of out of stock, low stock, and well stocked items">
+            <article class="dashboard-summary-bar dashboard-summary-bar--danger">
+                <div class="dashboard-summary-bar__meta">
+                    <span>Out of stock</span>
+                    <strong>{{ "{:,}".format(summary.out_of_stock_count) }}</strong>
+                </div>
+                <div class="dashboard-summary-bar__track" aria-hidden="true">
+                    <div class="dashboard-summary-bar__fill" style="width: {{ out_share }}%;"></div>
+                </div>
+                <small>{{ out_share|round(1) }}%</small>
             </article>
-            <article class="stat-card stat-card--warning">
-                <span>Low stock</span>
-                <strong>{{ summary.low_stock_count }}</strong>
+            <article class="dashboard-summary-bar dashboard-summary-bar--warning">
+                <div class="dashboard-summary-bar__meta">
+                    <span>Low stock</span>
+                    <strong>{{ "{:,}".format(summary.low_stock_count) }}</strong>
+                </div>
+                <div class="dashboard-summary-bar__track" aria-hidden="true">
+                    <div class="dashboard-summary-bar__fill" style="width: {{ low_share }}%;"></div>
+                </div>
+                <small>{{ low_share|round(1) }}%</small>
             </article>
-            <article class="stat-card stat-card--danger">
-                <span>Out of stock</span>
-                <strong>{{ summary.out_of_stock_count }}</strong>
+            <article class="dashboard-summary-bar dashboard-summary-bar--stable">
+                <div class="dashboard-summary-bar__meta">
+                    <span>Well stocked</span>
+                    <strong>{{ "{:,}".format(stable_items) }}</strong>
+                </div>
+                <div class="dashboard-summary-bar__track" aria-hidden="true">
+                    <div class="dashboard-summary-bar__fill" style="width: {{ stable_share }}%;"></div>
+                </div>
+                <small>{{ stable_share|round(1) }}%</small>
             </article>
         </div>
     </aside>
 </section>
 
 <section class="dashboard-insights">
-    {% for insight in quick_insights %}
-        <article class="card dashboard-insight dashboard-insight--{{ insight.tone }}">
-            <strong>{{ insight.value }}</strong>
-            <span>{{ insight.label }}</span>
-        </article>
-    {% endfor %}
+    <article class="card dashboard-insight dashboard-insight--{{ 'danger' if needs_attention else 'neutral' }}">
+        <strong>{{ "{:,}".format(needs_attention) }}</strong>
+        <span>Items needing attention</span>
+        <p>{{ summary.low_stock_count }} low stock, {{ summary.out_of_stock_count }} out of stock</p>
+    </article>
+    <article class="card dashboard-insight dashboard-insight--{{ 'warning' if dashboard_metrics.newly_out_today else 'neutral' }}">
+        <strong>{{ "{:,}".format(dashboard_metrics.newly_out_today) }}</strong>
+        <span>Newly out today</span>
+        <p>Items that reached zero after today&apos;s issues</p>
+    </article>
+    <article class="card dashboard-insight dashboard-insight--neutral">
+        <strong>{{ "{:,}".format(dashboard_metrics.stock_changes_today) }}</strong>
+        <span>Stock changes today</span>
+        <p>Completed stock in and stock out transactions</p>
+    </article>
 </section>
 
 <section class="dashboard-main">
@@ -77,11 +132,15 @@
                         </span>
                         <strong>{{ transaction.supply.item_name }}</strong>
                     </div>
-                    <div class="dashboard-transaction-row__meta">
-                        <span>{{ transaction.quantity }} {{ transaction.supply.unit }}</span>
-                        <span>{{ transaction.performer.full_name }}</span>
-                        <time>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
+                    <div class="dashboard-transaction-row__metric">
+                        <span>Quantity</span>
+                        <strong>{{ "{:,}".format(transaction.quantity) }} {{ transaction.supply.unit }}</strong>
                     </div>
+                    <div class="dashboard-transaction-row__person">
+                        <span>By</span>
+                        <strong>{{ transaction.performer.full_name }}</strong>
+                    </div>
+                    <time class="dashboard-transaction-row__time">{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
                 </div>
             {% else %}
                 <p class="empty-state">No transactions yet.</p>
@@ -89,60 +148,72 @@
         </div>
     </article>
 
-    <article class="card dashboard-card dashboard-card--attention">
-        <div class="section-heading dashboard-card__header">
-            <div>
-                <p class="eyebrow">Attention needed</p>
-                <h2>Low stock items</h2>
+    <div class="dashboard-sidebar">
+        <article class="card dashboard-card dashboard-card--attention">
+            <div class="section-heading dashboard-card__header">
+                <div>
+                    <p class="eyebrow">Attention needed</p>
+                    <h2>Low stock items</h2>
+                </div>
+                <a class="dashboard-link" href="{{ url_for('inventory.inventory_list', low_stock=1) }}">See all low stock</a>
             </div>
-            <a class="dashboard-link" href="{{ url_for('inventory.inventory_list', low_stock=1) }}">See all low stock</a>
-        </div>
-        <div class="dashboard-stock-list">
-            {% for supply in low_stock_items %}
-                <div class="dashboard-stock-row">
-                    <a class="dashboard-stock-row__item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                        <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
-                        <div>
-                            <strong>{{ supply.item_name }}</strong>
-                            <span>{{ supply.current_quantity }} {{ supply.unit }} left</span>
+            <div class="dashboard-stock-list">
+                {% for supply in low_stock_items %}
+                    {% set last_restock = supply.transactions | selectattr("transaction_type", "equalto", "in") | first %}
+                    <div class="dashboard-stock-row">
+                        <a class="dashboard-stock-row__item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
+                            <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
+                            <div class="dashboard-stock-row__copy">
+                                <div class="dashboard-stock-row__title">
+                                    <strong>{{ supply.item_name }}</strong>
+                                    {% if supply.category %}
+                                        <span class="badge badge--neutral dashboard-inline-badge">{{ supply.category }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="dashboard-stock-row__details">
+                                    <span>{{ "{:,}".format(supply.current_quantity) }} {{ supply.unit }} left</span>
+                                    <span>Minimum {{ "{:,}".format(supply.minimum_quantity) }} {{ supply.unit }}</span>
+                                    {% if last_restock %}
+                                        <span>Last restock {{ last_restock.created_at.strftime("%d %b %Y") }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        <div class="dashboard-stock-row__meta">
+                            <span class="dashboard-stock-row__status">{{ supply.status_label }}</span>
+                            <a class="button button--ghost dashboard-inline-action" href="{{ url_for('inventory.restock_supply_view', supply_id=supply.id) }}">Restock</a>
                         </div>
-                    </a>
-                    <div class="dashboard-stock-row__meta">
-                        <span>Min {{ supply.minimum_quantity }}</span>
-                        <a class="button button--ghost dashboard-inline-action" href="{{ url_for('inventory.restock_supply_view', supply_id=supply.id) }}">Restock</a>
                     </div>
-                </div>
-            {% else %}
-                <p class="empty-state">No low stock items right now.</p>
-            {% endfor %}
-        </div>
-    </article>
-</section>
-
-<section class="dashboard-secondary">
-    <article class="card dashboard-card dashboard-card--secondary">
-        <div class="section-heading dashboard-card__header">
-            <div>
-                <p class="eyebrow">Usage signal</p>
-                <h2>Most issued items</h2>
+                {% else %}
+                    <p class="empty-state">No low stock items right now.</p>
+                {% endfor %}
             </div>
-            {% if current_user.role == 'admin' %}
-                <a class="dashboard-link" href="{{ url_for('inventory.analytics') }}">View full analytics</a>
-            {% endif %}
-        </div>
-        <div class="dashboard-ranking-list">
-            {% for row in top_issued %}
-                <div class="dashboard-ranking-row">
-                    <div>
-                        <strong>{{ row.supply.item_name }}</strong>
-                        <p>{{ row.supply.location or 'Unassigned' }}</p>
-                    </div>
-                    <span>{{ row.issued_total }} issued</span>
+        </article>
+
+        <article class="card dashboard-card dashboard-card--secondary">
+            <div class="section-heading dashboard-card__header">
+                <div>
+                    <p class="eyebrow">Usage signal</p>
+                    <h2>Most issued items</h2>
                 </div>
-            {% else %}
-                <p class="empty-state">Issue activity will appear here once stock moves out.</p>
-            {% endfor %}
-        </div>
-    </article>
+                {% if current_user.role == 'admin' %}
+                    <a class="dashboard-link" href="{{ url_for('inventory.analytics') }}">View full analytics</a>
+                {% endif %}
+            </div>
+            <div class="dashboard-ranking-list">
+                {% for row in top_issued %}
+                    <div class="dashboard-ranking-row">
+                        <div>
+                            <strong>{{ row.supply.item_name }}</strong>
+                            <p>{{ row.supply.location or 'Unassigned' }}</p>
+                        </div>
+                        <span>{{ "{:,}".format(row.issued_total) }} issued</span>
+                    </div>
+                {% else %}
+                    <p class="empty-state">Issue activity will appear here once stock moves out.</p>
+                {% endfor %}
+            </div>
+        </article>
+    </div>
 </section>
 {% endblock %}
