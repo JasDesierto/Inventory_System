@@ -7,6 +7,12 @@
         <h1>Choose a category, inspect a stock item, and print its ledger.</h1>
         <p class="section-banner__lede">This view mirrors the stock card form with live balances pulled from recorded restocks and issuances.</p>
     </div>
+    <div class="step-strip" aria-label="Stock card steps">
+        <span>1. Filter</span>
+        <span>2. Select</span>
+        <span>3. Verify</span>
+        <span>4. Print</span>
+    </div>
 </section>
 
 <section
@@ -20,6 +26,7 @@
             <p class="eyebrow">Find stock</p>
             <h2>Filter by category</h2>
         </div>
+        <p class="panel-note">Narrow the list first, then choose the item whose stock card you need to print.</p>
         <label class="field">
             <span>Category</span>
             <select id="stock-card-category">
@@ -37,13 +44,21 @@
     </aside>
 
     <aside class="card preview-panel" id="stock-card-preview">
-        <div class="detail-panel detail-panel--empty">
+        <div class="section-heading">
+            <p class="eyebrow">Selected item</p>
+            <h2>Verify before printing</h2>
+        </div>
+        <div class="detail-panel detail-panel--empty" id="stock-card-preview-content">
             <p>Select an item to see its stock summary and printable card.</p>
         </div>
     </aside>
 
     <article class="card stock-card-print-host">
         <div class="stock-card-actions">
+            <div class="stock-card-actions__copy">
+                <p class="eyebrow">Printable preview</p>
+                <h2>Stock card output</h2>
+            </div>
             <button class="button button--primary" type="button" id="stock-card-print-button" disabled>Print Stock Card</button>
         </div>
         <div id="stock-card-sheet" class="stock-card-sheet stock-card-sheet--empty">

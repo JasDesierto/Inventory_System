@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
+from sqlalchemy import func
 
 from .constants import SUPPLY_CATEGORIES, display_supply_category
 from .decorators import role_required
@@ -124,14 +127,54 @@ def uploaded_photo(filename):
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard():
-    summary = get_dashboard_summary()
-    low_stock_items = get_low_stock_items(limit=6)
-    top_issued = get_top_issued_items(limit=5)
+    today_key = datetime.utcnow().date().isoformat()
+    summary = get_dashboard_summary(limit_recent=5)
+    low_stock_items = get_low_stock_items(limit=5)
+    top_issued = get_top_issued_items(limit=3)
+    stock_changes_today = (
+        db.session.query(func.count(StockTransaction.id))
+        .filter(func.date(StockTransaction.created_at) == today_key)
+        .scalar()
+        or 0
+    )
+    newly_out_today = (
+        db.session.query(func.count(func.distinct(StockTransaction.supply_id)))
+        .filter(
+            StockTransaction.transaction_type == "out",
+            StockTransaction.new_quantity == 0,
+            func.date(StockTransaction.created_at) == today_key,
+        )
+        .scalar()
+        or 0
+    )
+    quick_insights = [
+        {
+            "value": summary["low_stock_count"],
+            "label": "Low stock items",
+            "tone": "warning",
+        },
+        {
+            "value": summary["out_of_stock_count"],
+            "label": "Out of stock",
+            "tone": "danger",
+        },
+        {
+            "value": stock_changes_today,
+            "label": "Stock changes today",
+            "tone": "neutral",
+        },
+        {
+            "value": newly_out_today,
+            "label": "Newly out today",
+            "tone": "neutral",
+        },
+    ]
     return render_template(
         "dashboard.html",
         summary=summary,
         low_stock_items=low_stock_items,
         top_issued=top_issued,
+        quick_insights=quick_insights,
     )
 
 
@@ -301,7 +344,7 @@ def analytics():
     low_stock_items = get_low_stock_items(limit=8)
     out_of_stock_items = Supply.query.filter_by(status="out_of_stock").order_by(Supply.item_name.asc()).all()
     top_issued = get_top_issued_items(limit=6)
-    recent_movement = get_recent_stock_movement(limit=10)
+    recent_movement = get_recent_stock_movement(limit=None)
     monthly_out_totals = get_monthly_stock_out_totals(months=6)
     chart_data = {
         "monthlyOutTotals": monthly_out_totals,
@@ -329,7 +372,6 @@ def supply_api():
         location=request.args.get("location"),
         low_stock=request.args.get("low_stock") == "1",
         out_of_stock=request.args.get("out_of_stock") == "1",
-        limit=200,
     )
     return jsonify([_supply_payload(supply) for supply in supplies])
 

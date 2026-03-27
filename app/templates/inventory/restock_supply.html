@@ -14,6 +14,7 @@
             <p class="eyebrow">Find supply</p>
             <h2>Search inventory</h2>
         </div>
+        <p class="panel-note">Select the existing record to update instead of creating a duplicate stock item.</p>
         <label class="field">
             <span>Category</span>
             <select id="restock-category-filter">
@@ -32,31 +33,63 @@
     <form class="card form-stack" method="post" id="restock-form">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="supply_id" id="restock-supply-id" value="{{ selected_supply_id or '' }}">
-        <div class="section-heading">
-            <p class="eyebrow">Selected item</p>
-            <h2>Preview before restocking</h2>
-        </div>
+        <section class="form-section form-section--compact">
+            <div class="section-heading">
+                <p class="eyebrow">Selected item</p>
+                <h2>Preview before restocking</h2>
+            </div>
+            <p class="panel-note">Confirm the item, review current stock, then enter the incoming quantity.</p>
+        </section>
         <div id="restock-preview" class="detail-panel detail-panel--empty">
             <p>Select an item to see its current stock and restock it.</p>
         </div>
-        <label class="field">
-            <span>Category</span>
-            <select name="category" id="restock-category" required>
-                <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
-                {% for category in categories %}
-                    <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label class="field">
-            <span>Restock quantity</span>
-            <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
-        </label>
-        <label class="field">
-            <span>Remarks</span>
-            <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
-        </label>
-        <button class="button button--primary" type="submit" id="restock-submit" disabled>Confirm Restock</button>
+        <section class="form-section">
+            <div class="section-heading">
+                <p class="eyebrow">Transaction</p>
+                <h2>Restock details</h2>
+            </div>
+            <div class="field-grid">
+                <label class="field">
+                    <span>Category</span>
+                    <select name="category" id="restock-category" required>
+                        <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Restock quantity</span>
+                    <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required id="restock-quantity">
+                </label>
+                <label class="field field--full">
+                    <span>Remarks</span>
+                    <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+                </label>
+            </div>
+        </section>
+        <section class="form-section form-section--transaction">
+            <div class="section-heading">
+                <p class="eyebrow">Stock math</p>
+                <h2>Review the new total</h2>
+            </div>
+            <div class="transaction-math" id="restock-math">
+                <article class="stat-card">
+                    <span>Current stock</span>
+                    <strong id="restock-current-stock">-</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Add quantity</span>
+                    <strong id="restock-add-quantity">0</strong>
+                </article>
+                <article class="stat-card stat-card--success">
+                    <span>New total</span>
+                    <strong id="restock-new-total">-</strong>
+                </article>
+            </div>
+            <p class="transaction-note" id="restock-note">Select an item and enter a quantity to preview the updated stock total.</p>
+            <button class="button button--primary" type="submit" id="restock-submit" disabled>Confirm Restock</button>
+        </section>
     </form>
 </section>
 <script id="restock-data" type="application/json">{{ supplies_json|tojson }}</script>

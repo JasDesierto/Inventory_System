@@ -14,6 +14,7 @@
             <p class="eyebrow">Find supply</p>
             <h2>Search active stock</h2>
         </div>
+        <p class="panel-note">Review current availability before issuing so low stock items stand out immediately.</p>
         <label class="field">
             <span>Search</span>
             <input type="search" id="issue-search" placeholder="Search name, description, category, or location">
@@ -23,22 +24,54 @@
     <form class="card form-stack" method="post" id="issue-form">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="supply_id" id="issue-supply-id" value="{{ selected_supply_id or '' }}">
-        <div class="section-heading">
-            <p class="eyebrow">Selected item</p>
-            <h2>Preview before issuing</h2>
-        </div>
+        <section class="form-section form-section--compact">
+            <div class="section-heading">
+                <p class="eyebrow">Selected item</p>
+                <h2>Preview before issuing</h2>
+            </div>
+            <p class="panel-note">Check the current balance, then confirm how much stock will remain after issue.</p>
+        </section>
         <div id="issue-preview" class="detail-panel detail-panel--empty">
             <p>Select an item to see its stock details.</p>
         </div>
-        <label class="field">
-            <span>Quantity to issue</span>
-            <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
-        </label>
-        <label class="field">
-            <span>Remarks</span>
-            <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
-        </label>
-        <button class="button button--primary" type="submit" id="issue-submit" disabled>Issue Supply</button>
+        <section class="form-section">
+            <div class="section-heading">
+                <p class="eyebrow">Issue details</p>
+                <h2>Outgoing transaction</h2>
+            </div>
+            <div class="field-grid">
+                <label class="field">
+                    <span>Quantity to issue</span>
+                    <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required id="issue-quantity">
+                </label>
+                <label class="field field--full">
+                    <span>Remarks</span>
+                    <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+                </label>
+            </div>
+        </section>
+        <section class="form-section form-section--transaction">
+            <div class="section-heading">
+                <p class="eyebrow">Stock math</p>
+                <h2>Review the resulting stock</h2>
+            </div>
+            <div class="transaction-math" id="issue-math">
+                <article class="stat-card">
+                    <span>Current stock</span>
+                    <strong id="issue-current-stock">-</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Issue quantity</span>
+                    <strong id="issue-outgoing-quantity">0</strong>
+                </article>
+                <article class="stat-card stat-card--warning">
+                    <span>Resulting stock</span>
+                    <strong id="issue-new-total">-</strong>
+                </article>
+            </div>
+            <p class="transaction-note" id="issue-note">Select an item and enter an issue quantity to review the remaining balance.</p>
+            <button class="button button--primary" type="submit" id="issue-submit" disabled>Issue Supply</button>
+        </section>
     </form>
 </section>
 <script id="issue-data" type="application/json">{{ supplies_json|tojson }}</script>

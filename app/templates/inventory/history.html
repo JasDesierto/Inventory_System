@@ -9,8 +9,35 @@
     </div>
 </section>
 <section class="card">
+    <form class="history-toolbar" id="history-filter-form" data-no-page-transition="true">
+        <label class="field">
+            <span>From</span>
+            <input type="date" id="history-date-from">
+        </label>
+        <label class="field">
+            <span>To</span>
+            <input type="date" id="history-date-to">
+        </label>
+        <label class="field">
+            <span>Type</span>
+            <select id="history-type-filter">
+                <option value="">All transactions</option>
+                <option value="in">Stock in</option>
+                <option value="out">Stock out</option>
+            </select>
+        </label>
+        <label class="field">
+            <span>Item search</span>
+            <input type="search" id="history-item-search" placeholder="Search supply or remarks">
+        </label>
+        <label class="field">
+            <span>Performed by</span>
+            <input type="search" id="history-user-search" placeholder="Search user">
+        </label>
+        <button class="button button--ghost" type="reset">Clear filters</button>
+    </form>
     <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table data-table--sticky">
             <thead>
                 <tr>
                     <th>Supply</th>
@@ -23,9 +50,16 @@
                     <th>Timestamp</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="history-table-body">
                 {% for transaction in transactions %}
-                    <tr>
+                    <tr
+                        data-history-row
+                        data-item="{{ transaction.supply.item_name|lower }}"
+                        data-type="{{ transaction.transaction_type }}"
+                        data-user="{{ transaction.performer.full_name|lower }}"
+                        data-remarks="{{ (transaction.remarks or '')|lower }}"
+                        data-date="{{ transaction.created_at.strftime('%Y-%m-%d') }}"
+                    >
                         <td>{{ transaction.supply.item_name }}</td>
                         <td><span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span></td>
                         <td>{{ transaction.quantity }}</td>
@@ -43,5 +77,9 @@
             </tbody>
         </table>
     </div>
+    <div class="pagination-bar" id="history-pagination" hidden></div>
 </section>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/history.js') }}" defer></script>
 {% endblock %}

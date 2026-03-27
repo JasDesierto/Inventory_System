@@ -7,7 +7,7 @@ SUPPLY_CATEGORIES = (
     "Mailing and Shipping",
     "Printing Supplies",
     "Notebooks and Forms",
-    "Presentation Supplies",
+    "Office Accessories",
     "Computer and Office Accessories",
     "Pantry and Janitorial Supplies",
     "Storage Supplies",
@@ -15,7 +15,18 @@ SUPPLY_CATEGORIES = (
     "Others",
 )
 
+LEGACY_CATEGORY_ALIASES = {
+    "Presentation Supplies": "Office Accessories",
+}
+
+
+def normalize_supply_category(category):
+    normalized = str(category or "").strip()
+    if not normalized:
+        return None
+    return LEGACY_CATEGORY_ALIASES.get(normalized, normalized)
+
 
 def display_supply_category(category):
-    normalized = str(category or "").strip()
+    normalized = normalize_supply_category(category)
     return normalized or "Others"

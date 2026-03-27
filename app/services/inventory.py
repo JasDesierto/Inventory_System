@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import case, desc, func, or_
 
-from ..constants import SUPPLY_CATEGORIES
+from ..constants import SUPPLY_CATEGORIES, normalize_supply_category
 from ..extensions import db
 from ..models import StockTransaction, Supply
 
@@ -38,7 +38,7 @@ def _status_for(quantity, minimum_quantity):
 
 
 def _to_category(value, *, required=False):
-    category = _normalize_text(value)
+    category = normalize_supply_category(value)
     if not category:
         if required:
             raise InventoryError("Category is required.")
@@ -207,7 +207,7 @@ def search_supplies(
 ):
     query = Supply.query
     query_text = _normalize_text(query_text)
-    category = _normalize_text(category)
+    category = normalize_supply_category(category)
     location = _normalize_text(location)
 
     if query_text:
@@ -228,6 +228,13 @@ def search_supplies(
                     Supply.category == "Others",
                     Supply.category.is_(None),
                     Supply.category == "",
+                )
+            )
+        elif category == "Office Accessories":
+            query = query.filter(
+                or_(
+                    Supply.category == "Office Accessories",
+                    Supply.category == "Presentation Supplies",
                 )
             )
         else:
@@ -274,11 +281,10 @@ def get_dashboard_summary(limit_recent=8):
         .scalar()
         or 0
     )
-    recent_transactions = (
-        StockTransaction.query.order_by(StockTransaction.created_at.desc())
-        .limit(limit_recent)
-        .all()
-    )
+    recent_transactions_query = StockTransaction.query.order_by(StockTransaction.created_at.desc())
+    if limit_recent is not None:
+        recent_transactions_query = recent_transactions_query.limit(limit_recent)
+    recent_transactions = recent_transactions_query.all()
     return {
         "total_items": total_items,
         "total_stock_units": total_stock_units,
@@ -289,37 +295,38 @@ def get_dashboard_summary(limit_recent=8):
 
 
 def get_low_stock_items(limit=10):
-    return (
+    query = (
         Supply.query.filter(
             Supply.current_quantity > 0,
             Supply.current_quantity <= Supply.minimum_quantity,
         )
         .order_by(Supply.current_quantity.asc(), Supply.item_name.asc())
-        .limit(limit)
-        .all()
     )
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def get_top_issued_items(limit=5):
     issued_total = func.coalesce(func.sum(StockTransaction.quantity), 0).label("issued_total")
-    rows = (
+    query = (
         db.session.query(Supply, issued_total)
         .join(StockTransaction, StockTransaction.supply_id == Supply.id)
         .filter(StockTransaction.transaction_type == "out")
         .group_by(Supply.id)
         .order_by(desc("issued_total"), Supply.item_name.asc())
-        .limit(limit)
-        .all()
     )
+    if limit is not None:
+        query = query.limit(limit)
+    rows = query.all()
     return [{"supply": supply, "issued_total": total} for supply, total in rows]
 
 
 def get_recent_stock_movement(limit=12):
-    return (
-        StockTransaction.query.order_by(StockTransaction.created_at.desc())
-        .limit(limit)
-        .all()
-    )
+    query = StockTransaction.query.order_by(StockTransaction.created_at.desc())
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def get_monthly_stock_out_totals(months=6):

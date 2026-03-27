@@ -6,7 +6,7 @@ if (stockCardDataNode && stockCardRoot) {
     const categorySelect = document.getElementById("stock-card-category");
     const searchInput = document.getElementById("stock-card-search");
     const results = document.getElementById("stock-card-results");
-    const preview = document.getElementById("stock-card-preview");
+    const preview = document.getElementById("stock-card-preview-content");
     const sheet = document.getElementById("stock-card-sheet");
     const printButton = document.getElementById("stock-card-print-button");
     const endpointBase = "/api/supplies";
@@ -42,7 +42,8 @@ if (stockCardDataNode && stockCardRoot) {
     const renderResults = (collection) => {
         if (!collection.length) {
             results.innerHTML = '<p class="empty-state">No supplies match the current category or search.</p>';
-            preview.innerHTML = '<div class="detail-panel detail-panel--empty"><p>Select another category or search term.</p></div>';
+            preview.className = "detail-panel detail-panel--empty";
+            preview.innerHTML = "<p>Select another category or search term.</p>";
             sheet.className = "stock-card-sheet stock-card-sheet--empty";
             sheet.innerHTML = "<p>No printable stock card is available for the current filter.</p>";
             printButton.disabled = true;
@@ -60,7 +61,8 @@ if (stockCardDataNode && stockCardRoot) {
                         <img src="${escapeHtml(item.photo_url)}" alt="${escapeHtml(item.item_name)}">
                         <div class="result-card__meta">
                             <strong>${escapeHtml(item.item_name)}</strong>
-                            <p>${escapeHtml(item.category)} &middot; ${escapeHtml(item.current_quantity)} ${escapeHtml(item.unit)}</p>
+                            <p class="result-card__context">${escapeHtml(item.category)} &middot; ${escapeHtml(item.location)}</p>
+                            <p class="result-card__stock">${escapeHtml(item.current_quantity)} ${escapeHtml(item.unit)} on hand</p>
                         </div>
                         <span class="badge badge--${escapeHtml(item.status_tone)}">${escapeHtml(item.status_label)}</span>
                     </button>
@@ -71,10 +73,12 @@ if (stockCardDataNode && stockCardRoot) {
 
     const renderPreview = (item) => {
         if (!item) {
-            preview.innerHTML = '<div class="detail-panel detail-panel--empty"><p>Select a stock item to preview it.</p></div>';
+            preview.className = "detail-panel detail-panel--empty";
+            preview.innerHTML = "<p>Select a stock item to preview it.</p>";
             return;
         }
 
+        preview.className = "detail-panel";
         preview.innerHTML = `
             <div class="preview-shell">
                 <img src="${escapeHtml(item.photo_url)}" alt="${escapeHtml(item.item_name)}">

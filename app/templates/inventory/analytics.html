@@ -70,9 +70,9 @@
             <p class="eyebrow">Recent movement</p>
             <h2>Latest stock transactions</h2>
         </div>
-        <div class="timeline">
+        <div class="timeline" data-pageable="analytics-latest-transactions" data-page-size="10">
             {% for transaction in recent_movement %}
-                <div class="timeline__item">
+                <div class="timeline__item" data-page-item>
                     <div class="timeline__meta">
                         <span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span>
                         <time>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
@@ -84,10 +84,12 @@
                 <p class="empty-state">No stock movement recorded yet.</p>
             {% endfor %}
         </div>
+        <div class="pagination-bar" data-page-controls="analytics-latest-transactions" hidden></div>
     </article>
 </section>
 <script id="analytics-data" type="application/json">{{ chart_data|tojson }}</script>
 {% endblock %}
 {% block scripts %}
+<script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/pagination.js') }}" defer></script>
 <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='js/analytics.js') }}" defer></script>
 {% endblock %}

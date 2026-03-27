@@ -9,68 +9,102 @@
         <p class="section-banner__lede">Create a polished item record with complete stock details, a reliable photo, and a clean first transaction.</p>
     </div>
 </section>
-<section class="form-layout">
-    <form class="card form-stack" method="post" enctype="multipart/form-data">
+<section class="form-layout form-layout--add">
+    <form class="card form-stack admin-form admin-form--with-aside" method="post" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <div class="section-heading">
-            <p class="eyebrow">Item details</p>
-            <h2>Supply information</h2>
+        <div class="admin-form__main">
+            <section class="form-section">
+                <div class="section-heading">
+                    <p class="eyebrow">Item identity</p>
+                    <h2>Supply information</h2>
+                </div>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Item name</span>
+                        <input type="text" name="item_name" value="{{ request.form.get('item_name', '') }}" required>
+                    </label>
+                    <label class="field field--full">
+                        <span>Description</span>
+                        <textarea name="description" rows="4" required>{{ request.form.get('description', '') }}</textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="section-heading">
+                    <p class="eyebrow">Stock details</p>
+                    <h2>Opening stock</h2>
+                </div>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Unit of measure</span>
+                        <input type="text" name="unit" value="{{ request.form.get('unit', '') }}" placeholder="boxes, reams, pcs" required>
+                    </label>
+                    <label class="field">
+                        <span>Opening quantity</span>
+                        <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
+                    </label>
+                    <label class="field">
+                        <span>Minimum quantity</span>
+                        <input type="number" name="minimum_quantity" min="0" value="{{ request.form.get('minimum_quantity', 0) }}" required>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="section-heading">
+                    <p class="eyebrow">Classification and location</p>
+                    <h2>Storage context</h2>
+                </div>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Category</span>
+                        <select name="category" required>
+                            <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
+                            {% for category in categories %}
+                                <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Location</span>
+                        <input type="text" name="location" value="{{ request.form.get('location', '') }}">
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <div class="section-heading">
+                    <p class="eyebrow">Notes</p>
+                    <h2>Initial transaction context</h2>
+                </div>
+                <div class="field-grid">
+                    <label class="field field--full">
+                        <span>Remarks</span>
+                        <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+                    </label>
+                </div>
+            </section>
         </div>
-        <div class="field-grid">
-            <label class="field">
-                <span>Item name</span>
-                <input type="text" name="item_name" value="{{ request.form.get('item_name', '') }}" required>
-            </label>
-            <label class="field">
-                <span>Category</span>
-                <select name="category" required>
-                    <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
-                    {% for category in categories %}
-                        <option value="{{ category }}" {% if request.form.get('category') == category %}selected{% endif %}>{{ category }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label class="field field--full">
-                <span>Description</span>
-                <textarea name="description" rows="4" required>{{ request.form.get('description', '') }}</textarea>
-            </label>
-            <label class="field">
-                <span>Unit of measure</span>
-                <input type="text" name="unit" value="{{ request.form.get('unit', '') }}" placeholder="boxes, reams, pcs" required>
-            </label>
-            <label class="field">
-                <span>Location</span>
-                <input type="text" name="location" value="{{ request.form.get('location', '') }}">
-            </label>
-            <label class="field">
-                <span>Opening quantity</span>
-                <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
-            </label>
-            <label class="field">
-                <span>Minimum quantity</span>
-                <input type="number" name="minimum_quantity" min="0" value="{{ request.form.get('minimum_quantity', 0) }}" required>
-            </label>
-            <label class="field field--full">
-                <span>Remarks</span>
-                <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
-            </label>
-        </div>
-        <div class="section-heading">
-            <p class="eyebrow">Required capture</p>
-            <h2>Attach a file or capture from camera</h2>
-        </div>
-        <section class="capture-shell" data-photo-capture-root data-preview-empty="Choose a file or capture a photo to preview it here.">
-            <input type="hidden" name="photo_source" value="{{ photo_source }}" data-capture-mode-input>
-            <input type="hidden" name="captured_photo_data" value="" data-captured-photo>
-            <div class="capture-choice" role="tablist" aria-label="Choose photo source">
-                <button class="capture-choice__button{% if photo_source != 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="upload" aria-pressed="{{ 'false' if photo_source == 'camera' else 'true' }}">
-                    Attach file
-                </button>
-                <button class="capture-choice__button{% if photo_source == 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="camera" aria-pressed="{{ 'true' if photo_source == 'camera' else 'false' }}">
-                    Use camera
-                </button>
-            </div>
-            <div class="capture-panel{% if photo_source != 'camera' %} is-active{% endif %}" data-capture-panel="upload">
+
+        <aside class="admin-form__aside">
+            <section class="form-section form-section--photo" data-photo-capture-root data-preview-empty="Choose a file or capture a photo to preview it here.">
+                <input type="hidden" name="photo_source" value="{{ photo_source }}" data-capture-mode-input>
+                <input type="hidden" name="captured_photo_data" value="" data-captured-photo>
+                <div class="section-heading">
+                    <p class="eyebrow">Required photo</p>
+                    <h2>Capture the stock item</h2>
+                </div>
+                <p class="form-section__note">A clear item photo is required before a new supply record can be saved.</p>
+                <div class="capture-choice" role="tablist" aria-label="Choose photo source">
+                    <button class="capture-choice__button{% if photo_source != 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="upload" aria-pressed="{{ 'false' if photo_source == 'camera' else 'true' }}">
+                        Attach file
+                    </button>
+                    <button class="capture-choice__button{% if photo_source == 'camera' %} is-active{% endif %}" type="button" data-capture-mode-button data-mode="camera" aria-pressed="{{ 'true' if photo_source == 'camera' else 'false' }}">
+                        Use camera
+                    </button>
+                </div>
+                <div class="capture-panel{% if photo_source != 'camera' %} is-active{% endif %}" data-capture-panel="upload">
                 <label class="field">
                     <span>Item photo file</span>
                     <input
@@ -84,27 +118,28 @@
                     >
                     <small>Select an existing photo from the device.</small>
                 </label>
-            </div>
-            <div class="capture-panel{% if photo_source == 'camera' %} is-active{% endif %}" data-capture-panel="camera">
-                <div class="camera-stage">
-                    <video class="camera-stage__video" data-camera-video playsinline muted></video>
-                    <div class="camera-stage__placeholder" data-camera-placeholder>
-                        <strong>Live camera preview</strong>
-                        <span>Allow camera access, then capture the item when it is in frame.</span>
+                </div>
+                <div class="capture-panel{% if photo_source == 'camera' %} is-active{% endif %}" data-capture-panel="camera">
+                    <div class="camera-stage">
+                        <video class="camera-stage__video" data-camera-video playsinline muted></video>
+                        <div class="camera-stage__placeholder" data-camera-placeholder>
+                            <strong>Live camera preview</strong>
+                            <span>Allow camera access, then capture the item when it is in frame.</span>
+                        </div>
                     </div>
+                    <div class="camera-actions">
+                        <button class="button" type="button" data-camera-start>Start Camera</button>
+                        <button class="button button--primary" type="button" data-camera-capture disabled>Capture Photo</button>
+                        <button class="button button--ghost" type="button" data-camera-retake hidden>Retake</button>
+                    </div>
+                    <p class="camera-status" data-camera-status>Choose camera mode to capture directly from the current device.</p>
                 </div>
-                <div class="camera-actions">
-                    <button class="button" type="button" data-camera-start>Start Camera</button>
-                    <button class="button button--primary" type="button" data-camera-capture disabled>Capture Photo</button>
-                    <button class="button button--ghost" type="button" data-camera-retake hidden>Retake</button>
+                <div class="image-preview" id="add-photo-preview">
+                    <span>Choose a file or capture a photo to preview it here.</span>
                 </div>
-                <p class="camera-status" data-camera-status>Choose camera mode to capture directly from the current device.</p>
-            </div>
-        </section>
-        <div class="image-preview" id="add-photo-preview">
-            <span>Choose a file or capture a photo to preview it here.</span>
-        </div>
-        <button class="button button--primary" type="submit">Save New Supply</button>
+                <button class="button button--primary" type="submit">Save New Supply</button>
+            </section>
+        </aside>
     </form>
 </section>
 {% endblock %}
