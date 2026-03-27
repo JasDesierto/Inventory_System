@@ -643,6 +643,107 @@ body.page-is-leaving .page-shell > * {
     color: var(--text-strong);
 }
 
+body[data-page="inventory.inventory_list"] .section-banner,
+body[data-page="inventory.analytics"] .section-banner {
+    gap: 0.82rem;
+    margin-bottom: 0.64rem;
+    padding: 0.8rem 0.92rem;
+}
+
+body[data-page="inventory.inventory_list"] .section-banner .eyebrow,
+body[data-page="inventory.analytics"] .section-banner .eyebrow {
+    font-size: 0.74rem;
+    letter-spacing: 0.13em;
+}
+
+body[data-page="inventory.inventory_list"] .section-banner h1,
+body[data-page="inventory.analytics"] .section-banner h1 {
+    margin: 0.12rem 0 0.5rem;
+    font-size: clamp(1.58rem, 2.7vw, 2.88rem);
+    line-height: 0.98;
+}
+
+body[data-page="inventory.inventory_list"] .section-banner .section-banner__lede,
+body[data-page="inventory.analytics"] .section-banner .section-banner__lede {
+    max-width: 44rem;
+    font-size: 0.87rem;
+    line-height: 1.46;
+}
+
+body[data-page="inventory.inventory_list"] .section-banner .action-row {
+    gap: 0.42rem;
+}
+
+body[data-page="inventory.inventory_list"] .section-banner .action-row .button {
+    min-height: 2.22rem;
+    padding: 0.48rem 0.72rem;
+    font-size: 0.84rem;
+}
+
+body[data-page="inventory.add_supply_view"] .section-banner,
+body[data-page="inventory.issue_supply_view"] .section-banner,
+body[data-page="inventory.transaction_history"] .section-banner {
+    gap: 0.76rem;
+    margin-bottom: 0.58rem;
+    padding: 0.72rem 0.86rem;
+}
+
+body[data-page="inventory.add_supply_view"] .section-banner .eyebrow,
+body[data-page="inventory.issue_supply_view"] .section-banner .eyebrow,
+body[data-page="inventory.transaction_history"] .section-banner .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.13em;
+}
+
+body[data-page="inventory.add_supply_view"] .section-banner h1,
+body[data-page="inventory.issue_supply_view"] .section-banner h1,
+body[data-page="inventory.transaction_history"] .section-banner h1 {
+    margin: 0.08rem 0 0.46rem;
+    font-size: clamp(1.46rem, 2.45vw, 2.56rem);
+    line-height: 1;
+}
+
+body[data-page="inventory.add_supply_view"] .section-banner .section-banner__lede,
+body[data-page="inventory.issue_supply_view"] .section-banner .section-banner__lede,
+body[data-page="inventory.transaction_history"] .section-banner .section-banner__lede {
+    max-width: 42rem;
+    font-size: 0.84rem;
+    line-height: 1.42;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner {
+    gap: 0.68rem;
+    margin-bottom: 0.54rem;
+    padding: 0.68rem 0.8rem;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner .eyebrow {
+    font-size: 0.71rem;
+    letter-spacing: 0.12em;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner h1 {
+    margin: 0.06rem 0 0.4rem;
+    font-size: clamp(1.4rem, 2.28vw, 2.4rem);
+    line-height: 1.01;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner .section-banner__lede {
+    max-width: 40rem;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner .step-strip {
+    gap: 0.36rem;
+}
+
+body[data-page="inventory.stock_card_view"] .section-banner .step-strip span {
+    min-height: 1.78rem;
+    padding: 0.32rem 0.58rem;
+    font-size: 0.78rem;
+}
+
 .hero--compact {
     max-width: 720px;
     margin: 3rem auto;
@@ -693,9 +794,9 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
 .dashboard-intro {
     display: grid;
     place-items: start;
-    gap: 0.45rem;
-    min-height: clamp(5.5rem, 8.2vw, 6.6rem);
-    padding: clamp(0.82rem, 1vw, 0.98rem);
+    gap: 0.72rem;
+    min-height: clamp(6.4rem, 9vw, 7.7rem);
+    padding: clamp(1rem, 1.2vw, 1.16rem);
     text-align: left;
     background:
         radial-gradient(circle at top right, rgba(21, 128, 106, 0.14), transparent 32%),
@@ -719,7 +820,7 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
 
 .dashboard-intro__copy {
     display: grid;
-    gap: 0.28rem;
+    gap: 0.38rem;
     width: min(100%, 34rem);
     margin-inline: 0;
     justify-items: start;
@@ -759,7 +860,7 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     max-width: 31rem;
     color: var(--text-soft);
     font-size: clamp(0.82rem, 0.9vw, 0.92rem);
-    line-height: 1.38;
+    line-height: 1.46;
     text-wrap: pretty;
 }
 
@@ -768,16 +869,16 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     grid-template-columns: repeat(auto-fit, minmax(clamp(8.8rem, 18vw, 10.5rem), 1fr));
     width: 100%;
     align-items: stretch;
-    gap: 0.5rem;
-    margin-top: 0;
+    gap: 0.58rem;
+    margin-top: 0.12rem;
     overflow: visible;
     padding-bottom: 0;
 }
 
 .dashboard-intro__actions .button {
     width: 100%;
-    min-height: 2.25rem;
-    padding: 0.48rem 0.86rem;
+    min-height: 2.42rem;
+    padding: 0.56rem 0.9rem;
     font-size: 0.88rem;
     justify-content: center;
     text-align: center;
@@ -1240,6 +1341,356 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
 .dashboard-grid {
     grid-template-columns: 1.2fr 0.8fr;
     gap: 1.15rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-banner {
+    align-items: center;
+    gap: 0.75rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-banner__meta {
+    display: grid;
+    gap: 0.42rem;
+    justify-items: end;
+}
+
+body[data-page="inventory.analytics"] .analytics-banner__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.38rem 0.72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(21, 128, 106, 0.1);
+    background: rgba(252, 248, 242, 0.72);
+    color: var(--text-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpis,
+body[data-page="inventory.analytics"] .analytics-primary,
+body[data-page="inventory.analytics"] .analytics-secondary,
+body[data-page="inventory.analytics"] .analytics-footer {
+    display: grid;
+    gap: 0.82rem;
+    margin-bottom: 0.82rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body[data-page="inventory.analytics"] .analytics-primary {
+    grid-template-columns: minmax(0, 1.38fr) minmax(19rem, 0.92fr);
+    align-items: stretch;
+}
+
+body[data-page="inventory.analytics"] .analytics-secondary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+}
+
+body[data-page="inventory.analytics"] .analytics-footer {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    align-items: start;
+    margin-bottom: 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi,
+body[data-page="inventory.analytics"] .analytics-card {
+    padding: 0.88rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi {
+    display: grid;
+    gap: 0.22rem;
+    border-color: rgba(230, 221, 208, 0.88);
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi strong {
+    font-family: var(--mono);
+    font-size: clamp(1.35rem, 2vw, 1.9rem);
+    color: var(--text-strong);
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi span,
+body[data-page="inventory.analytics"] .analytics-kpi small {
+    color: var(--text-soft);
+    line-height: 1.32;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi small {
+    font-size: 0.78rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi--warning {
+    background:
+        radial-gradient(circle at top right, rgba(201, 146, 64, 0.12), transparent 36%),
+        linear-gradient(145deg, rgba(252, 248, 242, 0.96), rgba(241, 233, 222, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi--danger {
+    background:
+        radial-gradient(circle at top right, rgba(189, 95, 71, 0.12), transparent 36%),
+        linear-gradient(145deg, rgba(252, 248, 242, 0.96), rgba(241, 233, 222, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-kpi--success {
+    background:
+        radial-gradient(circle at top right, rgba(21, 128, 106, 0.12), transparent 36%),
+        linear-gradient(145deg, rgba(252, 248, 242, 0.96), rgba(241, 233, 222, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-card {
+    display: grid;
+    gap: 0.72rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-card__header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-card__header--split {
+    align-items: start;
+}
+
+body[data-page="inventory.analytics"] .analytics-card__meta {
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+body[data-page="inventory.analytics"] .analytics-inline-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    min-width: min(100%, 14rem);
+}
+
+body[data-page="inventory.analytics"] .analytics-inline-metrics > div,
+body[data-page="inventory.analytics"] .analytics-health-strip > div {
+    padding: 0.58rem 0.68rem;
+    border-radius: 16px;
+    border: 1px solid rgba(226, 216, 202, 0.9);
+    background: linear-gradient(180deg, rgba(252, 249, 244, 0.96), rgba(243, 236, 227, 0.88));
+}
+
+body[data-page="inventory.analytics"] .analytics-inline-metrics span,
+body[data-page="inventory.analytics"] .analytics-health-strip span {
+    display: block;
+    color: var(--text-soft);
+    font-size: 0.76rem;
+    margin-bottom: 0.2rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-inline-metrics strong,
+body[data-page="inventory.analytics"] .analytics-health-strip strong {
+    color: var(--text-strong);
+    font-size: 1.05rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-chart-shell {
+    position: relative;
+}
+
+body[data-page="inventory.analytics"] .analytics-chart-shell--primary {
+    min-height: 13.5rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-chart-shell--secondary {
+    min-height: 10.5rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-chart-shell canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+body[data-page="inventory.analytics"] .analytics-card--signals {
+    align-content: start;
+}
+
+body[data-page="inventory.analytics"] .analytics-signal {
+    display: grid;
+    gap: 0.38rem;
+    padding: 0.72rem;
+    border-radius: 18px;
+    border: 1px solid rgba(226, 216, 202, 0.9);
+    background: linear-gradient(180deg, rgba(252, 249, 244, 0.96), rgba(243, 236, 227, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-signal--warning {
+    background:
+        radial-gradient(circle at top right, rgba(201, 146, 64, 0.14), transparent 38%),
+        linear-gradient(180deg, rgba(252, 249, 244, 0.96), rgba(243, 236, 227, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-signal--success {
+    background:
+        radial-gradient(circle at top right, rgba(21, 128, 106, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(252, 249, 244, 0.96), rgba(243, 236, 227, 0.9));
+}
+
+body[data-page="inventory.analytics"] .analytics-signal p,
+body[data-page="inventory.analytics"] .analytics-signal small {
+    margin: 0;
+    color: var(--text-soft);
+}
+
+body[data-page="inventory.analytics"] .analytics-signal small {
+    font-size: 0.78rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-health-strip,
+body[data-page="inventory.analytics"] .analytics-dual-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-health-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="inventory.analytics"] .analytics-dual-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="inventory.analytics"] .analytics-dual-list section {
+    display: grid;
+    gap: 0.42rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-dual-list h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-strong);
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-list,
+body[data-page="inventory.analytics"] .analytics-item-list,
+body[data-page="inventory.analytics"] .analytics-priority-list {
+    display: grid;
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item,
+body[data-page="inventory.analytics"] .analytics-item-row,
+body[data-page="inventory.analytics"] .analytics-priority-row,
+body[data-page="inventory.analytics"] .analytics-timeline .timeline__item {
+    border-top: 1px solid var(--line);
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item:first-child,
+body[data-page="inventory.analytics"] .analytics-item-row:first-child,
+body[data-page="inventory.analytics"] .analytics-priority-row:first-child,
+body[data-page="inventory.analytics"] .analytics-timeline .timeline__item:first-child {
+    border-top: none;
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item {
+    display: grid;
+    gap: 0.12rem;
+    padding: 0.58rem 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item strong,
+body[data-page="inventory.analytics"] .analytics-item-row strong,
+body[data-page="inventory.analytics"] .analytics-priority-row strong {
+    color: var(--text-strong);
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item span,
+body[data-page="inventory.analytics"] .analytics-item-row span,
+body[data-page="inventory.analytics"] .analytics-item-row small,
+body[data-page="inventory.analytics"] .analytics-priority-row span,
+body[data-page="inventory.analytics"] .analytics-priority-row small {
+    color: var(--text-soft);
+    line-height: 1.28;
+}
+
+body[data-page="inventory.analytics"] .analytics-mini-item span,
+body[data-page="inventory.analytics"] .analytics-item-row small,
+body[data-page="inventory.analytics"] .analytics-priority-row small {
+    font-size: 0.79rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-item-row {
+    display: grid;
+    grid-template-columns: 3.05rem minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.62rem 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-item-row img {
+    width: 3.05rem;
+    height: 3.05rem;
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+body[data-page="inventory.analytics"] .analytics-item-row > div,
+body[data-page="inventory.analytics"] .analytics-priority-row__copy {
+    display: grid;
+    gap: 0.14rem;
+    min-width: 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-priority-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.7rem 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-priority-row__meta {
+    display: grid;
+    justify-items: end;
+    gap: 0.4rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-priority-row__action {
+    min-height: 2rem;
+    padding: 0.42rem 0.7rem;
+    font-size: 0.8rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-timeline {
+    gap: 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-timeline .timeline__item {
+    padding: 0.74rem 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-timeline .timeline__meta {
+    margin-bottom: 0.24rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-timeline .timeline__item p {
+    margin: 0.14rem 0 0;
+    font-size: 0.83rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-card .section-heading {
+    margin-bottom: 0;
+}
+
+body[data-page="inventory.analytics"] .analytics-card .section-heading h2 {
+    font-size: 1.22rem;
+}
+
+body[data-page="inventory.analytics"] .analytics-card .eyebrow,
+body[data-page="inventory.analytics"] .analytics-kpi .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+}
+
+body[data-page="inventory.analytics"] .analytics-card .pagination-bar {
+    margin-top: 0.25rem;
 }
 
 .compact-item,
@@ -2094,12 +2545,26 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     justify-self: end;
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro {
+    align-self: center;
+    align-content: start;
+    gap: clamp(0.85rem, 1.5vw, 1rem);
+    min-height: auto;
+    max-height: calc(100dvh - clamp(3rem, 6vw, 5rem));
+    padding: clamp(1.4rem, 2.4vw, 1.8rem);
+}
+
 .auth-panel__brand {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
     width: min(100%, 35rem);
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .auth-panel__brand {
+    gap: 0.85rem;
+    width: min(100%, 33rem);
 }
 
 .auth-panel__brand-mark {
@@ -2118,6 +2583,12 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
         inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .auth-panel__brand-mark {
+    width: 4.6rem;
+    height: 4.6rem;
+    border-radius: 22px;
+}
+
 .auth-panel__brand-logo {
     width: 100%;
     height: 100%;
@@ -2134,6 +2605,12 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     letter-spacing: 0.12em;
     text-transform: uppercase;
     text-wrap: balance;
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .auth-panel__brand-department {
+    font-size: 0.86rem;
+    line-height: 1.3;
+    letter-spacing: 0.1em;
 }
 
 .auth-layout--immersive .auth-panel--intro {
@@ -2164,6 +2641,13 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     text-shadow: 0 6px 18px rgba(8, 20, 17, 0.18);
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro h1 {
+    margin-bottom: 0.42rem;
+    font-size: clamp(2.2rem, 3.7vw, 3.95rem);
+    line-height: 0.92;
+    max-width: 11.5ch;
+}
+
 .auth-panel__headline-accent {
     display: block;
     margin-top: 0.16em;
@@ -2177,6 +2661,10 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
         0 6px 18px rgba(9, 27, 23, 0.18);
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .auth-panel__headline-accent {
+    margin-top: 0.12em;
+}
+
 .auth-panel__subheading {
     margin: 0.1rem 0 0.5rem;
     font-size: clamp(1rem, 1.35vw, 1.16rem);
@@ -2185,11 +2673,22 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     color: rgba(247, 222, 177, 0.94);
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .auth-panel__subheading {
+    margin: 0;
+    font-size: clamp(0.98rem, 1.2vw, 1.08rem);
+}
+
 .auth-panel--intro .lede {
     max-width: 38rem;
     font-size: 1.03rem;
     line-height: 1.65;
     color: var(--text-on-dark-soft);
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .lede {
+    max-width: 33rem;
+    font-size: 0.98rem;
+    line-height: 1.56;
 }
 
 .auth-panel--form {
@@ -2204,9 +2703,48 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     justify-self: start;
 }
 
+.auth-mode-switch {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    margin-bottom: 0.85rem;
+    padding: 0.28rem;
+    border-radius: 999px;
+    border: 1px solid rgba(21, 128, 106, 0.1);
+    background: linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(242, 235, 225, 0.86));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.auth-mode-switch__tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.18rem;
+    padding: 0.46rem 0.75rem;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 700;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.auth-mode-switch__tab.is-active {
+    background: linear-gradient(135deg, rgba(21, 128, 106, 0.14), rgba(205, 154, 78, 0.08));
+    color: var(--accent-strong);
+    box-shadow: 0 8px 18px rgba(32, 38, 34, 0.06);
+}
+
 .metric-strip {
     margin-top: 2rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-strip {
+    margin-top: 1.15rem;
+    gap: 0.72rem;
 }
 
 .metric-strip div {
@@ -2217,11 +2755,26 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-strip div {
+    padding: 0.82rem 0.88rem;
+    border-radius: 18px;
+}
+
 .metric-strip span {
     display: block;
     color: rgba(245, 237, 225, 0.7);
     font-size: 0.82rem;
     margin-bottom: 0.4rem;
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-strip span {
+    font-size: 0.77rem;
+    margin-bottom: 0.24rem;
+}
+
+body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-strip strong {
+    font-size: 0.95rem;
+    line-height: 1.28;
 }
 
 .metric-strip strong {
@@ -2649,6 +3202,52 @@ body[data-page="inventory.dashboard"] .topbar__meta .button {
 
     .camera-stage {
         width: 100%;
+    }
+}
+
+@media (max-width: 1200px) {
+    body[data-page="inventory.analytics"] .analytics-kpis,
+    body[data-page="inventory.analytics"] .analytics-secondary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body[data-page="inventory.analytics"] .analytics-primary,
+    body[data-page="inventory.analytics"] .analytics-footer {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    body[data-page="inventory.analytics"] .analytics-kpis,
+    body[data-page="inventory.analytics"] .analytics-secondary,
+    body[data-page="inventory.analytics"] .analytics-health-strip,
+    body[data-page="inventory.analytics"] .analytics-dual-list {
+        grid-template-columns: 1fr;
+    }
+
+    body[data-page="inventory.analytics"] .analytics-banner__meta,
+    body[data-page="inventory.analytics"] .analytics-priority-row__meta {
+        justify-items: start;
+    }
+
+    body[data-page="inventory.analytics"] .analytics-card__header,
+    body[data-page="inventory.analytics"] .analytics-priority-row,
+    body[data-page="inventory.analytics"] .analytics-item-row {
+        grid-template-columns: 1fr;
+    }
+
+    body[data-page="inventory.analytics"] .analytics-card__header,
+    body[data-page="inventory.analytics"] .analytics-inline-metrics {
+        display: grid;
+    }
+
+    body[data-page="inventory.analytics"] .analytics-item-row {
+        gap: 0.45rem;
+    }
+
+    body[data-page="inventory.analytics"] .analytics-item-row img {
+        width: 3.4rem;
+        height: 3.4rem;
     }
 }
 

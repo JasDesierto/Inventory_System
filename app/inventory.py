@@ -1,8 +1,10 @@
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from .constants import SUPPLY_CATEGORIES, display_supply_category
 from .decorators import role_required
@@ -15,7 +17,6 @@ from .services import (
     get_dashboard_summary,
     get_low_stock_items,
     get_monthly_stock_out_totals,
-    get_recent_stock_movement,
     get_top_issued_items,
     issue_supply,
     restock_supply,
@@ -116,6 +117,25 @@ def _distinct_values(column):
         .order_by(column.asc())
         .all()
     ]
+
+
+def _month_start(anchor=None, offset=0):
+    anchor = anchor or datetime.utcnow()
+    year = anchor.year
+    month = anchor.month + offset
+    while month <= 0:
+        month += 12
+        year -= 1
+    while month > 12:
+        month -= 12
+        year += 1
+    return datetime(year, month, 1)
+
+
+def _percent_change(current, previous):
+    if previous == 0:
+        return 100.0 if current else 0.0
+    return ((current - previous) / previous) * 100.0
 
 
 @inventory_bp.route("/uploads/<path:filename>")
@@ -341,11 +361,314 @@ def stock_card_view():
 @login_required
 @role_required("admin")
 def analytics():
-    low_stock_items = get_low_stock_items(limit=8)
+    now = datetime.utcnow()
+    current_month_start = _month_start(now)
+    previous_month_start = _month_start(now, -1)
+    next_month_start = _month_start(now, 1)
+    last_30_days = now - timedelta(days=30)
+    last_90_days = now - timedelta(days=90)
+
+    supplies = Supply.query.order_by(Supply.item_name.asc()).all()
+    low_stock_items = get_low_stock_items(limit=None)
     out_of_stock_items = Supply.query.filter_by(status="out_of_stock").order_by(Supply.item_name.asc()).all()
-    top_issued = get_top_issued_items(limit=6)
-    recent_movement = get_recent_stock_movement(limit=None)
+    recent_movement = (
+        StockTransaction.query.options(
+            joinedload(StockTransaction.supply),
+            joinedload(StockTransaction.performer),
+        )
+        .order_by(StockTransaction.created_at.desc())
+        .limit(8)
+        .all()
+    )
     monthly_out_totals = get_monthly_stock_out_totals(months=6)
+    month_total_map = {item["label"]: item["total"] for item in monthly_out_totals}
+    current_month_key = current_month_start.strftime("%Y-%m")
+    previous_month_key = previous_month_start.strftime("%Y-%m")
+    issued_this_month = int(month_total_map.get(current_month_key, 0) or 0)
+    issued_last_month = int(month_total_map.get(previous_month_key, 0) or 0)
+    prior_three_months = [item["total"] for item in monthly_out_totals[:-1][-3:]]
+    prior_three_month_avg = (
+        sum(prior_three_months) / len(prior_three_months)
+        if prior_three_months
+        else float(issued_last_month)
+    )
+
+    issued_total_recent = func.coalesce(func.sum(StockTransaction.quantity), 0).label("issued_total")
+    top_issued_rows = (
+        db.session.query(Supply, issued_total_recent)
+        .join(StockTransaction, StockTransaction.supply_id == Supply.id)
+        .filter(
+            StockTransaction.transaction_type == "out",
+            StockTransaction.created_at >= last_90_days,
+        )
+        .group_by(Supply.id)
+        .order_by(issued_total_recent.desc(), Supply.item_name.asc())
+        .limit(5)
+        .all()
+    )
+    top_issued = (
+        [{"supply": supply, "issued_total": int(total or 0)} for supply, total in top_issued_rows]
+        or get_top_issued_items(limit=5)
+    )
+
+    out_transactions = (
+        StockTransaction.query.options(joinedload(StockTransaction.supply))
+        .filter(StockTransaction.transaction_type == "out")
+        .order_by(StockTransaction.created_at.desc())
+        .all()
+    )
+    supply_stats = defaultdict(
+        lambda: {
+            "issued_30": 0,
+            "issued_90": 0,
+            "issued_total": 0,
+            "issue_events_30": 0,
+            "issue_events_90": 0,
+            "stockouts_90": 0,
+            "stockouts_total": 0,
+            "last_issue_at": None,
+        }
+    )
+    low_stock_entries_this_month = 0
+    low_stock_entries_last_month = 0
+    stockout_hits_this_month = 0
+    stockout_hits_last_month = 0
+
+    for transaction in out_transactions:
+        stats = supply_stats[transaction.supply_id]
+        stats["issued_total"] += transaction.quantity
+        if stats["last_issue_at"] is None or transaction.created_at > stats["last_issue_at"]:
+            stats["last_issue_at"] = transaction.created_at
+        if transaction.created_at >= last_30_days:
+            stats["issued_30"] += transaction.quantity
+            stats["issue_events_30"] += 1
+        if transaction.created_at >= last_90_days:
+            stats["issued_90"] += transaction.quantity
+            stats["issue_events_90"] += 1
+        if transaction.new_quantity == 0:
+            stats["stockouts_total"] += 1
+            if transaction.created_at >= last_90_days:
+                stats["stockouts_90"] += 1
+
+        minimum_quantity = transaction.supply.minimum_quantity
+        entered_low_stock = (
+            transaction.previous_quantity > minimum_quantity
+            and 0 < transaction.new_quantity <= minimum_quantity
+        )
+        reached_stock_out = transaction.new_quantity == 0
+        if current_month_start <= transaction.created_at < next_month_start:
+            if entered_low_stock:
+                low_stock_entries_this_month += 1
+            if reached_stock_out:
+                stockout_hits_this_month += 1
+        elif previous_month_start <= transaction.created_at < current_month_start:
+            if entered_low_stock:
+                low_stock_entries_last_month += 1
+            if reached_stock_out:
+                stockout_hits_last_month += 1
+
+    total_items = len(supplies)
+    low_stock_count = sum(1 for supply in supplies if supply.is_low_stock)
+    out_of_stock_count = sum(1 for supply in supplies if supply.current_quantity == 0)
+    healthy_count = max(total_items - low_stock_count - out_of_stock_count, 0)
+    low_stock_rate = (low_stock_count / total_items * 100) if total_items else 0
+    out_of_stock_rate = (out_of_stock_count / total_items * 100) if total_items else 0
+    healthy_rate = (healthy_count / total_items * 100) if total_items else 0
+
+    month_delta = issued_this_month - issued_last_month
+    month_delta_pct = _percent_change(issued_this_month, issued_last_month)
+    if issued_this_month and prior_three_month_avg and issued_this_month >= prior_three_month_avg * 1.25:
+        issue_activity_signal = {
+            "tone": "warning",
+            "label": "Issue activity is elevated",
+            "message": f"Issues this month are {month_delta_pct:+.0f}% versus last month and above the recent baseline.",
+            "caption": f"Three-month average: {prior_three_month_avg:.0f} units",
+        }
+    elif issued_this_month and prior_three_month_avg and issued_this_month <= prior_three_month_avg * 0.75:
+        issue_activity_signal = {
+            "tone": "success",
+            "label": "Issue activity has cooled",
+            "message": "Outbound movement is running below the recent baseline, which lowers immediate replenishment pressure.",
+            "caption": f"Three-month average: {prior_three_month_avg:.0f} units",
+        }
+    else:
+        issue_activity_signal = {
+            "tone": "neutral",
+            "label": "Issue activity is steady",
+            "message": "Monthly outbound movement is broadly in line with the recent pattern.",
+            "caption": f"This month {issued_this_month:,} units, last month {issued_last_month:,}",
+        }
+
+    fast_movers = []
+    for supply in supplies:
+        stats = supply_stats[supply.id]
+        if stats["issued_90"] <= 0:
+            continue
+        fast_movers.append(
+            {
+                "supply": supply,
+                "issued_90": stats["issued_90"],
+                "issued_30": stats["issued_30"],
+            }
+        )
+    fast_movers.sort(key=lambda item: (-item["issued_90"], item["supply"].item_name.lower()))
+    fast_movers = fast_movers[:3]
+
+    slow_movers = []
+    for supply in supplies:
+        stats = supply_stats[supply.id]
+        if stats["issued_90"] > 0 or supply.current_quantity == 0:
+            continue
+        slow_movers.append(
+            {
+                "supply": supply,
+                "last_issue_at": stats["last_issue_at"],
+                "status": (
+                    "Never issued"
+                    if stats["last_issue_at"] is None
+                    else f"Last issue {stats['last_issue_at'].strftime('%d %b %Y')}"
+                ),
+            }
+        )
+    slow_movers.sort(
+        key=lambda item: (
+            item["last_issue_at"] is not None,
+            item["last_issue_at"] or datetime.min,
+            -item["supply"].current_quantity,
+            item["supply"].item_name.lower(),
+        )
+    )
+    slow_movers = slow_movers[:3]
+
+    restock_priorities = []
+    for supply in supplies:
+        stats = supply_stats[supply.id]
+        shortfall = max(supply.minimum_quantity - supply.current_quantity, 0)
+        demand_pressure = stats["issued_30"] or stats["issued_90"]
+        if not (
+            supply.current_quantity == 0
+            or supply.is_low_stock
+            or stats["stockouts_90"] > 0
+            or (demand_pressure > 0 and supply.current_quantity <= max(supply.minimum_quantity, 1) + stats["issued_30"])
+        ):
+            continue
+
+        score = 0
+        if supply.current_quantity == 0:
+            score += 10
+        elif supply.is_low_stock:
+            score += 6
+        else:
+            score += 3
+        score += min(shortfall, 5)
+        score += min(demand_pressure / max(supply.minimum_quantity or 1, 1), 5)
+        score += min(stats["stockouts_90"] * 2, 4)
+
+        reasons = []
+        if supply.current_quantity == 0:
+            reasons.append("Out of stock")
+        elif shortfall > 0:
+            reasons.append(f"{shortfall} below minimum")
+        elif supply.is_low_stock:
+            reasons.append("At minimum threshold")
+        if stats["issued_30"] > 0:
+            reasons.append(f"{stats['issued_30']:,} issued in 30d")
+        if stats["stockouts_90"] > 0:
+            hit_label = "hit" if stats["stockouts_90"] == 1 else "hits"
+            reasons.append(f"{stats['stockouts_90']} stock-out {hit_label} in 90d")
+
+        restock_priorities.append(
+            {
+                "supply": supply,
+                "score": score,
+                "tone": "danger" if supply.current_quantity == 0 or stats["stockouts_90"] >= 2 else "warning",
+                "issued_30": stats["issued_30"],
+                "stockouts_90": stats["stockouts_90"],
+                "summary": " | ".join(reasons[:2]) if reasons else "Monitor demand against the current stock level.",
+            }
+        )
+    restock_priorities.sort(
+        key=lambda item: (-item["score"], item["supply"].current_quantity, item["supply"].item_name.lower())
+    )
+    restock_priorities = restock_priorities[:5]
+    critical_priority_count = sum(1 for item in restock_priorities if item["tone"] == "danger")
+
+    attention_items = []
+    for supply in low_stock_items:
+        stats = supply_stats[supply.id]
+        attention_items.append(
+            {
+                "supply": supply,
+                "issued_30": stats["issued_30"],
+                "summary": f"{supply.current_quantity:,} {supply.unit} left | minimum {supply.minimum_quantity:,}",
+                "note": (
+                    f"{stats['issued_30']:,} issued in the last 30 days"
+                    if stats["issued_30"] > 0
+                    else "Low stock based on the current on-hand balance"
+                ),
+            }
+        )
+    attention_items.sort(
+        key=lambda item: (-(item["issued_30"] > 0), item["supply"].current_quantity, item["supply"].item_name.lower())
+    )
+    attention_items = attention_items[:4]
+
+    unavailable_items = []
+    for supply in out_of_stock_items:
+        stats = supply_stats[supply.id]
+        unavailable_items.append(
+            {
+                "supply": supply,
+                "stockouts_total": stats["stockouts_total"],
+                "stockouts_90": stats["stockouts_90"],
+                "last_issue_at": stats["last_issue_at"],
+                "note": (
+                    f"{stats['stockouts_90']} stock-out hit(s) in the last 90 days"
+                    if stats["stockouts_90"] > 0
+                    else "No stock available to issue"
+                ),
+            }
+        )
+    unavailable_items.sort(
+        key=lambda item: (-item["stockouts_90"], -item["stockouts_total"], item["supply"].item_name.lower())
+    )
+    unavailable_items = unavailable_items[:4]
+
+    analytics_kpis = [
+        {
+            "label": "Issued this month",
+            "value": f"{issued_this_month:,}",
+            "detail": (
+                f"{abs(month_delta):,} {'more' if month_delta > 0 else 'fewer'} units than last month"
+                if month_delta
+                else "Flat versus last month"
+            ),
+            "caption": f"Last month: {issued_last_month:,} units",
+            "tone": issue_activity_signal["tone"],
+        },
+        {
+            "label": "Low-stock items",
+            "value": f"{low_stock_count:,}",
+            "detail": f"{low_stock_entries_this_month} entered low stock this month vs {low_stock_entries_last_month} last month",
+            "caption": f"{low_stock_rate:.1f}% of the catalog is below target",
+            "tone": "warning" if low_stock_count else "success",
+        },
+        {
+            "label": "Out-of-stock items",
+            "value": f"{out_of_stock_count:,}",
+            "detail": f"{stockout_hits_this_month} stock-out hits this month vs {stockout_hits_last_month} last month",
+            "caption": f"{out_of_stock_rate:.1f}% of the catalog is unavailable",
+            "tone": "danger" if out_of_stock_count else "success",
+        },
+        {
+            "label": "Restock priority",
+            "value": f"{len(restock_priorities):,}",
+            "detail": f"{critical_priority_count} critical and {max(len(restock_priorities) - critical_priority_count, 0)} high-priority items",
+            "caption": restock_priorities[0]["supply"].item_name if restock_priorities else "No urgent restocks",
+            "tone": "danger" if critical_priority_count else "warning",
+        },
+    ]
+
     chart_data = {
         "monthlyOutTotals": monthly_out_totals,
         "topIssued": [
@@ -355,9 +678,22 @@ def analytics():
     }
     return render_template(
         "inventory/analytics.html",
-        low_stock_items=low_stock_items,
-        out_of_stock_items=out_of_stock_items,
+        analytics_kpis=analytics_kpis,
+        attention_items=attention_items,
+        fast_movers=fast_movers,
+        healthy_rate=healthy_rate,
+        issue_activity_signal=issue_activity_signal,
+        issued_last_month=issued_last_month,
+        issued_this_month=issued_this_month,
+        low_stock_count=low_stock_count,
+        low_stock_rate=low_stock_rate,
+        month_delta=month_delta,
+        out_of_stock_count=out_of_stock_count,
+        out_of_stock_rate=out_of_stock_rate,
+        restock_priorities=restock_priorities,
+        slow_movers=slow_movers,
         top_issued=top_issued,
+        unavailable_items=unavailable_items,
         recent_movement=recent_movement,
         chart_data=chart_data,
     )

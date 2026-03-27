@@ -40,16 +40,45 @@
         </div>
     </div>
     <div class="auth-panel auth-panel--form">
+        <div class="auth-mode-switch" role="tablist" aria-label="Authentication mode">
+            <a class="auth-mode-switch__tab{% if active_auth_panel == 'login' %} is-active{% endif %}" href="{{ url_for('auth.login', next=next_url or None, mode='login') }}">Sign in</a>
+            <a class="auth-mode-switch__tab{% if active_auth_panel == 'signup' %} is-active{% endif %}" href="{{ url_for('auth.login', next=next_url or None, mode='signup') }}">Sign up</a>
+        </div>
+        {% if active_auth_panel == 'signup' %}
         <form class="form-stack" method="post">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ next_url or '' }}">
+            <input type="hidden" name="auth_action" value="signup">
+            <div class="section-heading">
+                <p class="eyebrow">Sign up</p>
+                <h2>Create a staff account</h2>
+            </div>
+            <label class="field">
+                <span>Name</span>
+                <input type="text" name="full_name" value="{{ signup_full_name or '' }}" autocomplete="name" required>
+            </label>
+            <label class="field">
+                <span>Username</span>
+                <input type="text" name="signup_username" value="{{ signup_username or '' }}" autocomplete="username" required>
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <input type="password" name="signup_password" autocomplete="new-password" required>
+            </label>
+            <button class="button button--primary" type="submit">Create Account</button>
+        </form>
+        {% else %}
+        <form class="form-stack" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_url or '' }}">
+            <input type="hidden" name="auth_action" value="login">
             <div class="section-heading">
                 <p class="eyebrow">Sign in</p>
                 <h2>Inventory access</h2>
             </div>
             <label class="field">
                 <span>Username</span>
-                <input type="text" name="username" autocomplete="username" required>
+                <input type="text" name="username" value="{{ login_username or '' }}" autocomplete="username" required>
             </label>
             <label class="field">
                 <span>Password</span>
@@ -57,13 +86,15 @@
             </label>
             <button class="button button--primary" type="submit">Login</button>
         </form>
+        {% endif %}
         <div class="hint-card">
             {% if has_users %}
-                <p>Use your assigned account to access the system.</p>
+                <p>Use your assigned account to access the system or create a new staff account here.</p>
             {% else %}
                 <p>No users exist yet.</p>
-                <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts.</p>
+                <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts, or sign up for a staff account here.</p>
             {% endif %}
+            <p class="muted">Accounts are stored in the users database. Passwords are stored securely as hashes, not plain text.</p>
         </div>
     </div>
 </section>

@@ -4,81 +4,214 @@
 <script nonce="{{ csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 {% block content %}
-<section class="section-banner">
+<section class="section-banner analytics-banner">
     <div>
         <p class="eyebrow">Inventory insights</p>
-        <h1>Low stock alerts, issue trends, and recent movement.</h1>
-        <p class="section-banner__lede">A calmer analytics view for decisions at a glance, with visual weight on the signals that matter most.</p>
+        <h1>Inventory health, movement shifts, and restock priorities.</h1>
+        <p class="section-banner__lede">See what changed from the last period, what needs attention now, which items move the most, and where replenishment should happen first.</p>
+    </div>
+    <div class="analytics-banner__meta" aria-label="Analytics snapshot">
+        <span class="analytics-banner__chip">{{ healthy_rate|round(1) }}% within healthy range</span>
+        <span class="analytics-banner__chip">{{ restock_priorities|length }} items need restock review</span>
     </div>
 </section>
-<section class="dashboard-grid">
-    <article class="card card--wide">
-        <div class="section-heading">
-            <p class="eyebrow">Monthly stock-out totals</p>
-            <h2>Issued quantity by month</h2>
+
+<section class="analytics-kpis" aria-label="Analytics summary insights">
+    {% for kpi in analytics_kpis %}
+        <article class="card analytics-kpi analytics-kpi--{{ kpi.tone }}">
+            <p class="eyebrow">{{ kpi.label }}</p>
+            <strong>{{ kpi.value }}</strong>
+            <span>{{ kpi.detail }}</span>
+            <small>{{ kpi.caption }}</small>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="analytics-primary">
+    <article class="card analytics-card analytics-card--chart">
+        <div class="analytics-card__header analytics-card__header--split">
+            <div class="section-heading">
+                <p class="eyebrow">Movement trend</p>
+                <h2>Issued quantity by month</h2>
+            </div>
+            <div class="analytics-inline-metrics" aria-label="Monthly issue comparison">
+                <div>
+                    <span>This month</span>
+                    <strong>{{ "{:,}".format(issued_this_month) }}</strong>
+                </div>
+                <div>
+                    <span>Last month</span>
+                    <strong>{{ "{:,}".format(issued_last_month) }}</strong>
+                </div>
+            </div>
         </div>
-        <canvas id="monthly-out-chart" height="140"></canvas>
+        <div class="analytics-chart-shell analytics-chart-shell--primary">
+            <canvas id="monthly-out-chart"></canvas>
+        </div>
     </article>
-    <article class="card">
+
+    <aside class="card analytics-card analytics-card--signals">
         <div class="section-heading">
-            <p class="eyebrow">Most issued</p>
-            <h2>Top issued supplies</h2>
+            <p class="eyebrow">Interpretation</p>
+            <h2>Operational signals</h2>
         </div>
-        <canvas id="top-issued-chart" height="220"></canvas>
+        <article class="analytics-signal analytics-signal--{{ issue_activity_signal.tone }}">
+            <span class="badge badge--{{ 'warning' if issue_activity_signal.tone == 'warning' else 'success' if issue_activity_signal.tone == 'success' else 'neutral' }}">{{ issue_activity_signal.label }}</span>
+            <p>{{ issue_activity_signal.message }}</p>
+            <small>{{ issue_activity_signal.caption }}</small>
+        </article>
+        <div class="analytics-health-strip" aria-label="Inventory health rates">
+            <div>
+                <span>Low-stock rate</span>
+                <strong>{{ low_stock_rate|round(1) }}%</strong>
+            </div>
+            <div>
+                <span>Stock-out rate</span>
+                <strong>{{ out_of_stock_rate|round(1) }}%</strong>
+            </div>
+        </div>
+        <div class="analytics-dual-list">
+            <section>
+                <h3>Fast movers</h3>
+                <div class="analytics-mini-list">
+                    {% for item in fast_movers %}
+                        <a class="analytics-mini-item" href="{{ url_for('inventory.supply_detail', supply_id=item.supply.id) }}">
+                            <strong>{{ item.supply.item_name }}</strong>
+                            <span>{{ "{:,}".format(item.issued_90) }} issued in 90d{% if item.issued_30 %} · {{ "{:,}".format(item.issued_30) }} in 30d{% endif %}</span>
+                        </a>
+                    {% else %}
+                        <p class="empty-state">Not enough recent issue activity yet.</p>
+                    {% endfor %}
+                </div>
+            </section>
+            <section>
+                <h3>Slow movers</h3>
+                <div class="analytics-mini-list">
+                    {% for item in slow_movers %}
+                        <a class="analytics-mini-item" href="{{ url_for('inventory.supply_detail', supply_id=item.supply.id) }}">
+                            <strong>{{ item.supply.item_name }}</strong>
+                            <span>{{ item.status }}</span>
+                        </a>
+                    {% else %}
+                        <p class="empty-state">Every tracked item has moved in the last 90 days.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </aside>
+</section>
+
+<section class="analytics-secondary">
+    <article class="card analytics-card analytics-card--support">
+        <div class="analytics-card__header">
+            <div class="section-heading">
+                <p class="eyebrow">Most issued</p>
+                <h2>Top issued supplies</h2>
+            </div>
+            <span class="analytics-card__meta">Last 90 days</span>
+        </div>
+        <div class="analytics-chart-shell analytics-chart-shell--secondary">
+            <canvas id="top-issued-chart"></canvas>
+        </div>
     </article>
-    <article class="card">
-        <div class="section-heading">
-            <p class="eyebrow">Low stock</p>
-            <h2>Needs attention</h2>
+
+    <article class="card analytics-card analytics-card--support">
+        <div class="analytics-card__header">
+            <div class="section-heading">
+                <p class="eyebrow">Attention needed</p>
+                <h2>Needs attention</h2>
+            </div>
+            <span class="analytics-card__meta">{{ attention_items|length }} highlighted</span>
         </div>
-        <div class="compact-list">
-            {% for supply in low_stock_items %}
-                <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                    <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
+        <div class="analytics-item-list">
+            {% for item in attention_items %}
+                <a class="analytics-item-row" href="{{ url_for('inventory.supply_detail', supply_id=item.supply.id) }}">
+                    <img src="{{ photo_url_for(item.supply.photo_path) }}" alt="{{ item.supply.item_name }}">
                     <div>
-                        <strong>{{ supply.item_name }}</strong>
-                        <span>{{ supply.current_quantity }} {{ supply.unit }} remaining</span>
+                        <strong>{{ item.supply.item_name }}</strong>
+                        <span>{{ item.summary }}</span>
+                        <small>{{ item.note }}</small>
                     </div>
                 </a>
             {% else %}
-                <p class="empty-state">No low stock items.</p>
+                <p class="empty-state">No low-stock items need attention right now.</p>
             {% endfor %}
         </div>
     </article>
-    <article class="card">
-        <div class="section-heading">
-            <p class="eyebrow">Out of stock</p>
-            <h2>Unavailable items</h2>
+
+    <article class="card analytics-card analytics-card--support">
+        <div class="analytics-card__header">
+            <div class="section-heading">
+                <p class="eyebrow">Unavailable now</p>
+                <h2>Out-of-stock items</h2>
+            </div>
+            <span class="analytics-card__meta">{{ unavailable_items|length }} shown</span>
         </div>
-        <div class="compact-list">
-            {% for supply in out_of_stock_items %}
-                <a class="compact-item" href="{{ url_for('inventory.supply_detail', supply_id=supply.id) }}">
-                    <img src="{{ photo_url_for(supply.photo_path) }}" alt="{{ supply.item_name }}">
+        <div class="analytics-item-list">
+            {% for item in unavailable_items %}
+                <a class="analytics-item-row" href="{{ url_for('inventory.supply_detail', supply_id=item.supply.id) }}">
+                    <img src="{{ photo_url_for(item.supply.photo_path) }}" alt="{{ item.supply.item_name }}">
                     <div>
-                        <strong>{{ supply.item_name }}</strong>
-                        <span>{{ supply.location or 'Unassigned' }}</span>
+                        <strong>{{ item.supply.item_name }}</strong>
+                        <span>{{ item.supply.location or 'Unassigned' }}</span>
+                        <small>{{ item.note }}</small>
                     </div>
                     <span class="badge badge--danger">0 left</span>
                 </a>
             {% else %}
-                <p class="empty-state">No out-of-stock items.</p>
+                <p class="empty-state">No out-of-stock items at the moment.</p>
             {% endfor %}
         </div>
     </article>
-    <article class="card card--wide">
-        <div class="section-heading">
-            <p class="eyebrow">Recent movement</p>
-            <h2>Latest stock transactions</h2>
+</section>
+
+<section class="analytics-footer">
+    <article class="card analytics-card analytics-card--priority">
+        <div class="analytics-card__header">
+            <div class="section-heading">
+                <p class="eyebrow">Action queue</p>
+                <h2>Restock priority</h2>
+            </div>
+            <span class="analytics-card__meta">Sorted by current risk</span>
         </div>
-        <div class="timeline" data-pageable="analytics-latest-transactions" data-page-size="10">
+        <div class="analytics-priority-list">
+            {% for item in restock_priorities %}
+                <div class="analytics-priority-row">
+                    <div class="analytics-priority-row__copy">
+                        <a href="{{ url_for('inventory.supply_detail', supply_id=item.supply.id) }}">
+                            <strong>{{ item.supply.item_name }}</strong>
+                        </a>
+                        <span>{{ "{:,}".format(item.supply.current_quantity) }} {{ item.supply.unit }} on hand · minimum {{ "{:,}".format(item.supply.minimum_quantity) }}</span>
+                        <small>{{ item.summary }}</small>
+                    </div>
+                    <div class="analytics-priority-row__meta">
+                        <span class="badge badge--{{ item.tone }}">{{ 'Critical' if item.tone == 'danger' else 'Restock soon' }}</span>
+                        <a class="button button--ghost analytics-priority-row__action" href="{{ url_for('inventory.restock_supply_view', supply_id=item.supply.id) }}">Restock</a>
+                    </div>
+                </div>
+            {% else %}
+                <p class="empty-state">No immediate restock priorities are visible from the current stock and issue patterns.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card analytics-card analytics-card--movement">
+        <div class="analytics-card__header">
+            <div class="section-heading">
+                <p class="eyebrow">Recent movement</p>
+                <h2>Latest stock transactions</h2>
+            </div>
+            <span class="analytics-card__meta">Most recent 8 records</span>
+        </div>
+        <div class="timeline analytics-timeline" data-pageable="analytics-latest-transactions" data-page-size="8">
             {% for transaction in recent_movement %}
                 <div class="timeline__item" data-page-item>
                     <div class="timeline__meta">
-                        <span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ transaction.transaction_type|upper }}</span>
+                        <span class="badge badge--{{ 'success' if transaction.transaction_type == 'in' else 'warning' }}">{{ 'Stock in' if transaction.transaction_type == 'in' else 'Stock out' }}</span>
                         <time>{{ transaction.created_at.strftime("%d %b %Y %H:%M") }}</time>
                     </div>
                     <strong>{{ transaction.supply.item_name }}</strong>
-                    <p>{{ transaction.quantity }} {{ transaction.supply.unit }} - {{ transaction.performer.full_name }}</p>
+                    <p>{{ "{:,}".format(transaction.quantity) }} {{ transaction.supply.unit }} · {{ transaction.performer.full_name }}</p>
                 </div>
             {% else %}
                 <p class="empty-state">No stock movement recorded yet.</p>
@@ -87,6 +220,7 @@
         <div class="pagination-bar" data-page-controls="analytics-latest-transactions" hidden></div>
     </article>
 </section>
+
 <script id="analytics-data" type="application/json">{{ chart_data|tojson }}</script>
 {% endblock %}
 {% block scripts %}

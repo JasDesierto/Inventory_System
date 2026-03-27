@@ -191,3 +191,27 @@ def register_cli(app):
             + " | ".join(credential_parts)
             + (" " + " ".join(guidance_parts) if guidance_parts else "")
         )
+
+    @app.cli.command("users")
+    def users():
+        records = User.query.order_by(User.role.desc(), User.username.asc()).all()
+        if not records:
+            click.echo("No users found.")
+            return
+
+        for user in records:
+            click.echo(
+                f"{user.id}\t{user.username}\t{user.full_name}\t{user.role}\t{user.created_at.strftime('%Y-%m-%d %H:%M')}"
+            )
+
+    @app.cli.command("set-password")
+    @click.argument("username")
+    @click.argument("password")
+    def set_password(username, password):
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            raise click.ClickException(f"User '{username}' was not found.")
+
+        user.set_password(password)
+        db.session.commit()
+        click.echo(f"Password updated for {user.username}.")
