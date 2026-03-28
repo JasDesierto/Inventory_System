@@ -52,10 +52,10 @@
                 {% endif %}
             </nav>
             <div class="topbar__meta">
-                <div class="user-pill">
+                <a class="user-pill user-pill--link {{ 'is-active' if request.endpoint == 'inventory.profile_view' else '' }}" href="{{ url_for('inventory.profile_view') }}" aria-label="Open profile page">
                     <span>{{ current_user.full_name }}</span>
                     <strong>{{ current_user.role|title }}</strong>
-                </div>
+                </a>
                 <form method="post" action="{{ url_for('auth.logout') }}">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <button class="button button--ghost" type="submit">Logout</button>

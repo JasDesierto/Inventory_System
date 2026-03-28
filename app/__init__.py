@@ -2,6 +2,7 @@ from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_login import current_user
+from sqlalchemy import inspect, text
 
 from .cli import register_cli
 from .config import Config
@@ -126,6 +127,12 @@ def create_app(config_object=None):
 
     with app.app_context():
         db.create_all()
+        inspector = inspect(db.engine)
+        if inspector.has_table("users"):
+            user_columns = {column["name"] for column in inspector.get_columns("users")}
+            if "avatar_path" not in user_columns:
+                db.session.execute(text("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255)"))
+                db.session.commit()
         from .models import Supply
 
         migrate_public_uploads(db, Supply)

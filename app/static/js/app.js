@@ -138,6 +138,106 @@ document.addEventListener("DOMContentLoaded", () => {
         }, pageTransitionDelayMs);
     });
 
+    document.querySelectorAll("[data-auth-shell]").forEach((shell) => {
+        const tabs = Array.from(shell.querySelectorAll("[data-auth-tab]"));
+        const panels = Array.from(shell.querySelectorAll("[data-auth-form-panel]"));
+        const formStage = shell.querySelector("[data-auth-form-stage]");
+        const validModes = new Set(["login", "signup"]);
+
+        if (!tabs.length || !panels.length) {
+            return;
+        }
+
+        const syncStageHeight = () => {
+            if (!formStage) {
+                return;
+            }
+
+            const tallestPanelHeight = panels.reduce((maxHeight, panel) => {
+                return Math.max(maxHeight, panel.scrollHeight);
+            }, 0);
+            formStage.style.minHeight = `${tallestPanelHeight}px`;
+        };
+
+        const readModeFromUrl = () => {
+            try {
+                const params = new URL(window.location.href).searchParams;
+                const mode = params.get("mode");
+                return validModes.has(mode) ? mode : null;
+            } catch (_error) {
+                return null;
+            }
+        };
+
+        const syncMode = (nextMode, { updateHistory = false, replaceHistory = false } = {}) => {
+            if (!validModes.has(nextMode)) {
+                return;
+            }
+
+            shell.dataset.activeAuthPanel = nextMode;
+
+            tabs.forEach((tab) => {
+                const isActive = tab.dataset.authTab === nextMode;
+                tab.classList.toggle("is-active", isActive);
+                tab.setAttribute("aria-selected", isActive ? "true" : "false");
+                tab.tabIndex = isActive ? 0 : -1;
+            });
+
+            panels.forEach((panel) => {
+                const isActive = panel.dataset.authFormPanel === nextMode;
+                panel.classList.toggle("is-active", isActive);
+                panel.setAttribute("aria-hidden", isActive ? "false" : "true");
+                if (isActive) {
+                    panel.removeAttribute("inert");
+                    return;
+                }
+                panel.setAttribute("inert", "");
+            });
+
+            window.requestAnimationFrame(() => {
+                syncStageHeight();
+            });
+
+            if (!updateHistory) {
+                return;
+            }
+
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set("mode", nextMode);
+                const historyState = { ...(window.history.state || {}), authMode: nextMode };
+                const historyMethod = replaceHistory ? "replaceState" : "pushState";
+                window.history[historyMethod](historyState, "", url);
+            } catch (_error) {
+                // Ignore history API failures and keep the in-page switch active.
+            }
+        };
+
+        const initialMode = readModeFromUrl() || shell.dataset.activeAuthPanel || "login";
+        syncMode(initialMode, { updateHistory: Boolean(readModeFromUrl()), replaceHistory: true });
+
+        tabs.forEach((tab) => {
+            tab.addEventListener("click", (event) => {
+                event.preventDefault();
+                const nextMode = tab.dataset.authTab || "login";
+                if (shell.dataset.activeAuthPanel === nextMode) {
+                    return;
+                }
+
+                syncMode(nextMode, { updateHistory: true });
+            });
+        });
+
+        window.addEventListener("popstate", () => {
+            const nextMode = readModeFromUrl() || "login";
+            syncMode(nextMode);
+        });
+
+        window.addEventListener("resize", () => {
+            syncStageHeight();
+        });
+    });
+
     document.querySelectorAll("[data-image-input]").forEach((input) => {
         input.addEventListener("change", () => {
             const targetSelector = input.getAttribute("data-preview-target");

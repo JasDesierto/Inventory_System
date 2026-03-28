@@ -27,6 +27,7 @@ from .utils.uploads import (
     delete_uploaded_image,
     photo_url_for,
     save_form_image,
+    save_uploaded_image,
 )
 
 inventory_bp = Blueprint("inventory", __name__)
@@ -34,6 +35,17 @@ inventory_bp = Blueprint("inventory", __name__)
 
 def _photo_url(photo_path):
     return photo_url_for(photo_path)
+
+
+def _user_avatar_url(user):
+    if user.avatar_path:
+        return photo_url_for(user.avatar_path)
+    return url_for("static", filename="media/dilg-logo.png")
+
+
+def _user_initials(user):
+    parts = [part[:1].upper() for part in (user.full_name or "").split() if part]
+    return "".join(parts[:2]) or (user.username[:2].upper() if user.username else "U")
 
 
 def _status_tone(status):
@@ -195,6 +207,70 @@ def dashboard():
         low_stock_items=low_stock_items,
         top_issued=top_issued,
         quick_insights=quick_insights,
+    )
+
+
+@inventory_bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile_view():
+    if request.method == "POST":
+        action = request.form.get("profile_action", "").strip()
+
+        if action == "details":
+            full_name = request.form.get("full_name", "").strip()
+            if not full_name:
+                flash("Name is required.", "danger")
+            elif len(full_name) < 2:
+                flash("Name must be at least 2 characters long.", "danger")
+            else:
+                current_user.full_name = full_name
+                db.session.commit()
+                flash("Profile name updated.", "success")
+            return redirect(url_for("inventory.profile_view"))
+
+        if action == "password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            confirm_password = request.form.get("confirm_password", "")
+
+            if not current_user.check_password(current_password):
+                flash("Current password is incorrect.", "danger")
+            elif len(new_password) < 8:
+                flash("New password must be at least 8 characters long.", "danger")
+            elif new_password != confirm_password:
+                flash("New password and confirmation do not match.", "danger")
+            elif current_password == new_password:
+                flash("Choose a different password from the current one.", "warning")
+            else:
+                current_user.set_password(new_password)
+                db.session.commit()
+                flash("Password updated.", "success")
+            return redirect(url_for("inventory.profile_view"))
+
+        if action == "avatar":
+            previous_avatar_path = current_user.avatar_path
+            try:
+                avatar_path = save_uploaded_image(request.files.get("avatar"))
+            except UploadError as exc:
+                flash(str(exc), "danger")
+                return redirect(url_for("inventory.profile_view"))
+
+            current_user.avatar_path = avatar_path
+            db.session.commit()
+
+            if previous_avatar_path and previous_avatar_path != avatar_path:
+                delete_uploaded_image(previous_avatar_path)
+
+            flash("Profile image updated.", "success")
+            return redirect(url_for("inventory.profile_view"))
+
+        flash("That profile action is not available.", "warning")
+        return redirect(url_for("inventory.profile_view"))
+
+    return render_template(
+        "inventory/profile.html",
+        avatar_url=_user_avatar_url(current_user),
+        user_initials=_user_initials(current_user),
     )
 
 

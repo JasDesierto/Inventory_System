@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block title %}Profile | {{ app_name }}{% endblock %}
+{% block content %}
+<section class="section-banner">
+    <div>
+        <p class="eyebrow">Account settings</p>
+        <h1>Profile</h1>
+        <p class="section-banner__lede">Update how your account appears in the system, rotate your password, and keep a profile image on file without leaving the main workspace.</p>
+    </div>
+    <div class="step-strip profile-banner__meta" aria-label="Profile summary">
+        <span>{{ current_user.role|title }}</span>
+        <span>Joined {{ current_user.created_at.strftime("%d %b %Y") }}</span>
+    </div>
+</section>
+
+<section class="workspace workspace--profile">
+    <aside class="card card--contrast profile-summary">
+        <div class="profile-summary__avatar-shell">
+            {% if current_user.avatar_path %}
+                <img class="profile-summary__avatar" src="{{ avatar_url }}" alt="{{ current_user.full_name }}">
+            {% else %}
+                <div class="profile-summary__avatar profile-summary__avatar--fallback" aria-hidden="true">{{ user_initials }}</div>
+            {% endif %}
+        </div>
+        <div class="profile-summary__copy">
+            <p class="eyebrow">Signed in as</p>
+            <h2>{{ current_user.full_name }}</h2>
+            <p>{{ current_user.username }}</p>
+        </div>
+        <div class="profile-summary__stats" aria-label="Account details">
+            <div class="stat-card">
+                <span>Role</span>
+                <strong>{{ current_user.role|title }}</strong>
+            </div>
+            <div class="stat-card">
+                <span>Member since</span>
+                <strong>{{ current_user.created_at.strftime("%d %b %Y") }}</strong>
+            </div>
+        </div>
+        <p class="profile-summary__note">The profile tile in the top bar now opens this page so account settings stay one click away from the rest of the inventory workflow.</p>
+    </aside>
+
+    <div class="profile-stack">
+        <article class="card profile-card">
+            <div class="section-heading profile-card__header">
+                <div>
+                    <p class="eyebrow">Identity</p>
+                    <h2>Display name</h2>
+                </div>
+                <p class="panel-note">This is the name shown around the inventory app.</p>
+            </div>
+            <form class="form-stack" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="profile_action" value="details">
+                <label class="field">
+                    <span>Full name</span>
+                    <input type="text" name="full_name" value="{{ current_user.full_name }}" autocomplete="name" required>
+                </label>
+                <div class="action-row">
+                    <button class="button button--primary" type="submit">Save Name</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="card profile-card">
+            <div class="section-heading profile-card__header">
+                <div>
+                    <p class="eyebrow">Portrait</p>
+                    <h2>Profile image</h2>
+                </div>
+                <p class="panel-note">Upload a square or portrait image for a cleaner account identity.</p>
+            </div>
+            <div class="profile-avatar-editor">
+                <div class="profile-avatar-editor__preview">
+                    {% if current_user.avatar_path %}
+                        <img src="{{ avatar_url }}" alt="{{ current_user.full_name }}">
+                    {% else %}
+                        <div class="profile-avatar-editor__fallback" aria-hidden="true">{{ user_initials }}</div>
+                    {% endif %}
+                </div>
+                <form class="form-stack profile-avatar-editor__form" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="profile_action" value="avatar">
+                    <label class="field">
+                        <span>Choose image</span>
+                        <input type="file" name="avatar" accept=".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/gif,image/webp" required>
+                    </label>
+                    <div class="action-row">
+                        <button class="button" type="submit">Upload Image</button>
+                    </div>
+                </form>
+            </div>
+        </article>
+
+        <article class="card profile-card">
+            <div class="section-heading profile-card__header">
+                <div>
+                    <p class="eyebrow">Security</p>
+                    <h2>Change password</h2>
+                </div>
+                <p class="panel-note">Use at least 8 characters and avoid reusing a password from another service.</p>
+            </div>
+            <form class="form-stack" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="profile_action" value="password">
+                <div class="field-grid">
+                    <label class="field field--full">
+                        <span>Current password</span>
+                        <input type="password" name="current_password" autocomplete="current-password" required>
+                    </label>
+                    <label class="field">
+                        <span>New password</span>
+                        <input type="password" name="new_password" autocomplete="new-password" required>
+                    </label>
+                    <label class="field">
+                        <span>Confirm new password</span>
+                        <input type="password" name="confirm_password" autocomplete="new-password" required>
+                    </label>
+                </div>
+                <div class="action-row">
+                    <button class="button button--primary" type="submit">Update Password</button>
+                </div>
+            </form>
+        </article>
+    </div>
+</section>
+{% endblock %}
