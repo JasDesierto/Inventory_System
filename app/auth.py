@@ -1,9 +1,9 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 
 from .extensions import db
 from .models import User
-from .security import is_safe_redirect_target
+from .security import is_safe_redirect_target, validate_password_strength
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -12,7 +12,10 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 def login():
     next_url = request.args.get("next") or request.form.get("next")
     active_auth_panel = request.args.get("mode", "login")
+    allow_self_signup = current_app.config["ALLOW_SELF_SIGNUP"]
     if active_auth_panel not in {"login", "signup"}:
+        active_auth_panel = "login"
+    if active_auth_panel == "signup" and not allow_self_signup:
         active_auth_panel = "login"
     login_username = ""
     signup_full_name = ""
@@ -21,6 +24,10 @@ def login():
     if request.method == "POST":
         action = request.form.get("auth_action", "login")
         if action == "signup":
+            if not allow_self_signup:
+                flash("Self-service signup is disabled. Contact an administrator for an account.", "warning")
+                return redirect(url_for("auth.login", next=next_url or None, mode="login"))
+
             active_auth_panel = "signup"
             full_name = request.form.get("full_name", "").strip()
             username = request.form.get("signup_username", "").strip()
@@ -29,6 +36,7 @@ def login():
             signup_username = username
 
             existing_user = User.query.filter_by(username=username).first() if username else None
+            password_error = validate_password_strength(password)
 
             if not full_name:
                 flash("Name is required.", "danger")
@@ -40,8 +48,8 @@ def login():
                 flash("Username must be at least 3 characters long.", "danger")
             elif existing_user:
                 flash("That username is already in use.", "danger")
-            elif len(password) < 8:
-                flash("Password must be at least 8 characters long.", "danger")
+            elif password_error:
+                flash(password_error, "danger")
             else:
                 user = User(
                     username=username,
@@ -52,6 +60,7 @@ def login():
                 db.session.add(user)
                 db.session.commit()
 
+                session.clear()
                 session.permanent = True
                 login_user(user)
                 flash(f"Account created. Welcome, {user.full_name}.", "success")
@@ -69,6 +78,7 @@ def login():
                 flash("Invalid username or password.", "danger")
             else:
                 # Marking the session permanent applies the configured cookie lifetime to authenticated users.
+                session.clear()
                 session.permanent = True
                 login_user(user)
                 flash(f"Welcome back, {user.full_name}.", "success")
@@ -92,5 +102,6 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()
     flash("You have been signed out.", "success")
     return redirect(url_for("auth.login"))

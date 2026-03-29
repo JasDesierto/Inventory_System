@@ -53,18 +53,20 @@
             >
                 Sign in
             </a>
-            <a
-                class="auth-mode-switch__tab{% if active_auth_panel == 'signup' %} is-active{% endif %}"
-                href="{{ url_for('auth.login', next=next_url or None, mode='signup') }}"
-                role="tab"
-                id="auth-tab-signup"
-                aria-controls="auth-panel-signup"
-                aria-selected="{{ 'true' if active_auth_panel == 'signup' else 'false' }}"
-                tabindex="{{ '0' if active_auth_panel == 'signup' else '-1' }}"
-                data-auth-tab="signup"
-            >
-                Sign up
-            </a>
+            {% if allow_self_signup %}
+                <a
+                    class="auth-mode-switch__tab{% if active_auth_panel == 'signup' %} is-active{% endif %}"
+                    href="{{ url_for('auth.login', next=next_url or None, mode='signup') }}"
+                    role="tab"
+                    id="auth-tab-signup"
+                    aria-controls="auth-panel-signup"
+                    aria-selected="{{ 'true' if active_auth_panel == 'signup' else 'false' }}"
+                    tabindex="{{ '0' if active_auth_panel == 'signup' else '-1' }}"
+                    data-auth-tab="signup"
+                >
+                    Sign up
+                </a>
+            {% endif %}
         </div>
         <div class="auth-form-stage" data-auth-form-stage>
             <form
@@ -94,44 +96,54 @@
                 </label>
                 <button class="button button--primary" type="submit">Login</button>
             </form>
-            <form
-                class="form-stack auth-form-panel{% if active_auth_panel == 'signup' %} is-active{% endif %}"
-                method="post"
-                role="tabpanel"
-                id="auth-panel-signup"
-                aria-labelledby="auth-tab-signup"
-                aria-hidden="{{ 'false' if active_auth_panel == 'signup' else 'true' }}"
-                {% if active_auth_panel != 'signup' %}inert{% endif %}
-                data-auth-form-panel="signup"
-            >
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="next" value="{{ next_url or '' }}">
-                <input type="hidden" name="auth_action" value="signup">
-                <div class="section-heading">
-                    <p class="eyebrow">Sign up</p>
-                    <h2>Create a staff account</h2>
-                </div>
-                <label class="field">
-                    <span>Name</span>
-                    <input type="text" name="full_name" value="{{ signup_full_name or '' }}" autocomplete="name" required>
-                </label>
-                <label class="field">
-                    <span>Username</span>
-                    <input type="text" name="signup_username" value="{{ signup_username or '' }}" autocomplete="username" required>
-                </label>
-                <label class="field">
-                    <span>Password</span>
-                    <input type="password" name="signup_password" autocomplete="new-password" required>
-                </label>
-                <button class="button button--primary" type="submit">Create Account</button>
-            </form>
+            {% if allow_self_signup %}
+                <form
+                    class="form-stack auth-form-panel{% if active_auth_panel == 'signup' %} is-active{% endif %}"
+                    method="post"
+                    role="tabpanel"
+                    id="auth-panel-signup"
+                    aria-labelledby="auth-tab-signup"
+                    aria-hidden="{{ 'false' if active_auth_panel == 'signup' else 'true' }}"
+                    {% if active_auth_panel != 'signup' %}inert{% endif %}
+                    data-auth-form-panel="signup"
+                >
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ next_url or '' }}">
+                    <input type="hidden" name="auth_action" value="signup">
+                    <div class="section-heading">
+                        <p class="eyebrow">Sign up</p>
+                        <h2>Create a staff account</h2>
+                    </div>
+                    <label class="field">
+                        <span>Name</span>
+                        <input type="text" name="full_name" value="{{ signup_full_name or '' }}" autocomplete="name" required>
+                    </label>
+                    <label class="field">
+                        <span>Username</span>
+                        <input type="text" name="signup_username" value="{{ signup_username or '' }}" autocomplete="username" required>
+                    </label>
+                    <label class="field">
+                        <span>Password</span>
+                        <input type="password" name="signup_password" autocomplete="new-password" required>
+                    </label>
+                    <button class="button button--primary" type="submit">Create Account</button>
+                </form>
+            {% endif %}
         </div>
         <div class="hint-card">
             {% if has_users %}
-                <p>Use your assigned account to access the system or create a new staff account here.</p>
+                {% if allow_self_signup %}
+                    <p>Use your assigned account to access the system or create a new staff account here.</p>
+                {% else %}
+                    <p>Use your assigned account to access the system. New accounts must be created by an administrator.</p>
+                {% endif %}
             {% else %}
                 <p>No users exist yet.</p>
-                <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts, or sign up for a staff account here.</p>
+                {% if allow_self_signup %}
+                    <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts, or sign up for a staff account here.</p>
+                {% else %}
+                    <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts before deployment.</p>
+                {% endif %}
             {% endif %}
         </div>
     </div>

@@ -10,6 +10,7 @@ from .constants import SUPPLY_CATEGORIES, display_supply_category
 from .decorators import role_required
 from .extensions import db
 from .models import StockTransaction, Supply, User
+from .security import validate_password_strength
 from .services import (
     InventoryError,
     add_new_supply,
@@ -296,11 +297,12 @@ def profile_view():
             current_password = request.form.get("current_password", "")
             new_password = request.form.get("new_password", "")
             confirm_password = request.form.get("confirm_password", "")
+            password_error = validate_password_strength(new_password)
 
             if not current_user.check_password(current_password):
                 flash("Current password is incorrect.", "danger")
-            elif len(new_password) < 8:
-                flash("New password must be at least 8 characters long.", "danger")
+            elif password_error:
+                flash(password_error, "danger")
             elif new_password != confirm_password:
                 flash("New password and confirmation do not match.", "danger")
             elif current_password == new_password:

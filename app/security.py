@@ -45,6 +45,32 @@ def is_safe_redirect_target(target):
     return test_url.scheme in {"http", "https"} and test_url.netloc == reference_url.netloc
 
 
+def validate_password_strength(password):
+    password = password or ""
+    if len(password) < 12:
+        return "Password must be at least 12 characters long."
+    if not any(character.isalpha() for character in password):
+        return "Password must include at least one letter."
+    if not any(character.isdigit() for character in password):
+        return "Password must include at least one number."
+    return None
+
+
+def validate_runtime_security(app):
+    if not app.config.get("IS_PRODUCTION"):
+        return
+
+    secret_key = app.config.get("SECRET_KEY", "")
+    if not secret_key or secret_key == "office-inventory-dev-key":
+        raise RuntimeError("Production requires a unique SECRET_KEY.")
+    if len(secret_key) < 32:
+        raise RuntimeError("Production SECRET_KEY must be at least 32 characters long.")
+    if not app.config.get("SESSION_COOKIE_SECURE"):
+        raise RuntimeError("Production requires SESSION_COOKIE_SECURE=1.")
+    if not app.config.get("TRUSTED_HOSTS"):
+        raise RuntimeError("Production requires TRUSTED_HOSTS to be configured.")
+
+
 def build_csp_header():
     nonce = get_csp_nonce()
     directives = {

@@ -1,8 +1,9 @@
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import inspect, text
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .cli import register_cli
 from .config import Config
@@ -12,6 +13,7 @@ from .security import (
     ensure_request_nonce,
     get_csp_nonce,
     get_csrf_token,
+    validate_runtime_security,
     validate_csrf,
 )
 from .utils.uploads import migrate_public_uploads, photo_url_for
@@ -20,6 +22,26 @@ from .utils.uploads import migrate_public_uploads, photo_url_for
 def create_app(config_object=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object or Config)
+    validate_runtime_security(app)
+
+    if any(
+        app.config.get(setting, 0) > 0
+        for setting in (
+            "PROXY_FIX_X_FOR",
+            "PROXY_FIX_X_PROTO",
+            "PROXY_FIX_X_HOST",
+            "PROXY_FIX_X_PORT",
+            "PROXY_FIX_X_PREFIX",
+        )
+    ):
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=app.config["PROXY_FIX_X_FOR"],
+            x_proto=app.config["PROXY_FIX_X_PROTO"],
+            x_host=app.config["PROXY_FIX_X_HOST"],
+            x_port=app.config["PROXY_FIX_X_PORT"],
+            x_prefix=app.config["PROXY_FIX_X_PREFIX"],
+        )
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
@@ -47,6 +69,12 @@ def create_app(config_object=None):
             response.headers["X-Frame-Options"] = "DENY"
             response.headers["Referrer-Policy"] = "same-origin"
             response.headers["Permissions-Policy"] = "camera=(self)"
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+            response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            if app.config.get("SESSION_COOKIE_SECURE"):
+                response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         if request.endpoint != "static" and current_user.is_authenticated:
             # Authenticated pages and protected images should not be cached on shared machines.
@@ -65,6 +93,11 @@ def create_app(config_object=None):
     @app.route("/")
     def index():
         return redirect(url_for("auth.login"))
+
+    @app.get("/healthz")
+    def healthcheck():
+        db.session.execute(text("SELECT 1"))
+        return jsonify({"status": "ok"}), 200
 
     @app.errorhandler(403)
     def forbidden(_error):
@@ -118,6 +151,7 @@ def create_app(config_object=None):
     def inject_shell():
         return {
             "app_name": app.config["APP_NAME"],
+            "allow_self_signup": app.config["ALLOW_SELF_SIGNUP"],
             "csrf_token": get_csrf_token,
             "csp_nonce": get_csp_nonce(),
             "photo_url_for": photo_url_for,

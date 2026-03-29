@@ -6,9 +6,34 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name, default=0):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+def _env_list(name):
+    value = os.environ.get(name, "")
+    items = [item.strip() for item in value.split(",") if item.strip()]
+    return items or None
+
+
 class Config:
+    APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
+    IS_PRODUCTION = APP_ENV == "production"
     APP_NAME = "Office Inventory System"
-    SECRET_KEY = os.environ.get("SECRET_KEY", "office-inventory-dev-key")
+    SECRET_KEY = os.environ.get("SECRET_KEY") or ("office-inventory-dev-key" if not IS_PRODUCTION else "")
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///inventory.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
@@ -16,13 +41,24 @@ class Config:
     UPLOAD_FOLDER = str(BASE_DIR.parent / "instance" / "uploads")
     PROTECTED_UPLOAD_PREFIX = "protected_uploads/"
     DEFAULT_PHOTO_PATH = "uploads/placeholder-supply.svg"
+    SESSION_COOKIE_NAME = "__Host-inventory_session" if IS_PRODUCTION else "inventory_session"
+    SESSION_COOKIE_PATH = "/"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+    SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", IS_PRODUCTION)
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    SESSION_REFRESH_EACH_REQUEST = False
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
+    PREFERRED_URL_SCHEME = "https" if SESSION_COOKIE_SECURE else "http"
+    ALLOW_SELF_SIGNUP = _env_bool("ALLOW_SELF_SIGNUP", not IS_PRODUCTION)
+    TRUSTED_HOSTS = _env_list("TRUSTED_HOSTS")
+    PROXY_FIX_X_FOR = _env_int("PROXY_FIX_X_FOR", 0)
+    PROXY_FIX_X_PROTO = _env_int("PROXY_FIX_X_PROTO", 0)
+    PROXY_FIX_X_HOST = _env_int("PROXY_FIX_X_HOST", 0)
+    PROXY_FIX_X_PORT = _env_int("PROXY_FIX_X_PORT", 0)
+    PROXY_FIX_X_PREFIX = _env_int("PROXY_FIX_X_PREFIX", 0)
     SEED_ADMIN_USERNAME = os.environ.get("SEED_ADMIN_USERNAME", "admin")
     SEED_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD")
     SEED_ERLA_USERNAME = os.environ.get("SEED_ERLA_USERNAME", "Erla")

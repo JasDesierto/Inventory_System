@@ -4,3 +4,5 @@ instance/inventory.db
 instance/uploads/
 .venv/
 venv/
+.env
+.env.local
