@@ -240,7 +240,9 @@ body.page-is-leaving .page-shell > * {
 
 .user-pill {
     display: inline-flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.72rem;
+    min-width: 0;
 }
 
 .brand__mark {
@@ -390,12 +392,13 @@ body.page-is-leaving .page-shell > * {
 }
 
 .user-pill {
-    padding: 0.42rem 0.65rem;
-    align-items: flex-end;
-    border-radius: 14px;
+    padding: 0.38rem 0.82rem 0.38rem 0.42rem;
+    border-radius: 18px;
     background: linear-gradient(180deg, rgba(251, 248, 242, 0.9), rgba(243, 236, 226, 0.82));
     border: 1px solid var(--line);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    box-shadow:
+        0 10px 24px rgba(33, 33, 26, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .user-pill--link {
@@ -423,16 +426,43 @@ body.page-is-leaving .page-shell > * {
     outline-offset: 2px;
 }
 
-.user-pill span {
-    font-size: 0.83rem;
-    line-height: 1.1;
+.user-pill__avatar {
+    width: 2.42rem;
+    height: 2.42rem;
+    flex: 0 0 auto;
+    border-radius: 15px;
+    object-fit: cover;
+    border: 1px solid rgba(186, 170, 145, 0.36);
+    box-shadow:
+        0 8px 18px rgba(42, 34, 24, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.user-pill strong {
-    font-size: 0.72rem;
-    line-height: 1.1;
+.user-pill__avatar--fallback {
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.94), rgba(235, 224, 206, 0.82)),
+        linear-gradient(145deg, rgba(21, 128, 106, 0.18), rgba(194, 131, 45, 0.2));
+    color: #18453a;
+    font-size: 0.82rem;
+    font-weight: 800;
     letter-spacing: 0.08em;
-    text-transform: uppercase;
+}
+
+.user-pill__copy {
+    display: grid;
+    min-width: 0;
+}
+
+.user-pill__name {
+    overflow: hidden;
+    color: #14362d;
+    font-size: 0.86rem;
+    line-height: 1.1;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .topbar__meta .button {
@@ -734,6 +764,206 @@ body[data-page="inventory.transaction_history"] .section-banner .section-banner_
     max-width: 42rem;
     font-size: 0.84rem;
     line-height: 1.42;
+}
+
+body[data-page="inventory.add_supply_view"] .form-layout--add {
+    gap: 0.82rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form {
+    gap: 0.9rem;
+    padding: 0.95rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form.admin-form--with-aside {
+    grid-template-columns: minmax(0, 1.16fr) minmax(280px, 0.84fr);
+    gap: 0.9rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__main,
+body[data-page="inventory.add_supply_view"] .add-supply-form__aside {
+    gap: 0.9rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__section,
+body[data-page="inventory.add_supply_view"] .add-supply-form__aside .form-section--photo {
+    gap: 0.72rem;
+    padding: 0.82rem 0.88rem;
+    border-radius: 18px;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .section-heading {
+    margin-bottom: 0.16rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .section-heading h2 {
+    font-size: 1.22rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .field-grid {
+    gap: 0.78rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__section--identity .field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__stock-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__remarks {
+    grid-column: 1 / -1;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .field span {
+    font-size: 0.88rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .field input,
+body[data-page="inventory.add_supply_view"] .add-supply-form .field select,
+body[data-page="inventory.add_supply_view"] .add-supply-form .field textarea {
+    padding: 0.72rem 0.82rem;
+    border-radius: 14px;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .field textarea {
+    min-height: 4.65rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form__aside .form-section--photo {
+    position: sticky;
+    top: 1rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .form-section__note,
+body[data-page="inventory.add_supply_view"] .add-supply-form .camera-status {
+    font-size: 0.84rem;
+    line-height: 1.42;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .capture-choice {
+    width: 100%;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .capture-choice__button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.68rem 0.82rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .camera-stage {
+    width: 100%;
+    aspect-ratio: 1.08 / 1;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .camera-actions {
+    gap: 0.55rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .image-preview {
+    min-height: 9.5rem;
+}
+
+body[data-page="inventory.add_supply_view"] .add-supply-form .button[type="submit"] {
+    width: 100%;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card {
+    gap: 0.9rem;
+    padding: 0.95rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card__intro,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card__details,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card__math,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card__preview {
+    gap: 0.72rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .form-section {
+    padding: 0.82rem 0.88rem;
+    border-radius: 18px;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .section-heading {
+    margin-bottom: 0.16rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .section-heading h2 {
+    font-size: 1.22rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .panel-note,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-note {
+    font-size: 0.84rem;
+    line-height: 1.42;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card__preview {
+    padding: 0.88rem;
+    border-radius: 18px;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__hero {
+    grid-template-columns: 6.2rem minmax(0, 1fr);
+    gap: 0.72rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__hero img {
+    width: 6.2rem;
+    height: 6.2rem;
+    border-radius: 18px;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .badge-row {
+    flex-wrap: wrap;
+    gap: 0.38rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__hero h3 {
+    margin: 0.3rem 0 0.32rem;
+    font-size: 1.02rem;
+    line-height: 1.15;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__hero p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    line-height: 1.42;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__metrics {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__metrics > div {
+    padding: 0.68rem 0.72rem;
+    border-radius: 16px;
+    background: rgba(248, 243, 235, 0.78);
+    border: 1px solid rgba(51, 64, 55, 0.08);
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .field-grid,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-math {
+    gap: 0.78rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .field span {
+    font-size: 0.88rem;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .field input,
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .field textarea {
+    padding: 0.72rem 0.82rem;
+    border-radius: 14px;
+}
+
+body[data-page="inventory.issue_supply_view"] .issue-flow-card .field textarea {
+    min-height: 4.65rem;
 }
 
 body[data-page="inventory.stock_card_view"] .section-banner {
@@ -2001,6 +2231,124 @@ body[data-page="inventory.analytics"] .analytics-card .pagination-bar {
     align-content: start;
 }
 
+.profile-card--admin {
+    gap: 1.15rem;
+}
+
+.profile-admin-stats,
+.profile-user-directory {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.profile-admin-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-user-record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.95rem 1rem;
+    border-radius: 22px;
+    border: 1px solid rgba(21, 128, 106, 0.12);
+    background:
+        radial-gradient(circle at top left, rgba(21, 128, 106, 0.08), transparent 34%),
+        linear-gradient(145deg, rgba(251, 248, 242, 0.96), rgba(240, 233, 222, 0.92));
+    box-shadow:
+        0 16px 28px rgba(33, 31, 24, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.66);
+}
+
+.profile-user-record__identity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: center;
+    min-width: 0;
+}
+
+.profile-user-record__avatar-shell {
+    display: flex;
+}
+
+.profile-user-record__avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 1px solid rgba(183, 170, 147, 0.36);
+    box-shadow:
+        0 12px 22px rgba(32, 29, 23, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+
+.profile-user-record__avatar--fallback {
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(circle at top left, rgba(245, 220, 177, 0.44), transparent 42%),
+        linear-gradient(145deg, rgba(21, 128, 106, 0.44), rgba(205, 154, 78, 0.34));
+    color: var(--text-on-dark);
+    font-family: var(--display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.profile-user-record__copy {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.profile-user-record__headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.42rem;
+}
+
+.profile-user-record__headline h3,
+.profile-user-record__username,
+.profile-user-record__actions .panel-note {
+    margin: 0;
+}
+
+.profile-user-record__headline h3 {
+    font-size: 1rem;
+}
+
+.profile-user-record__username {
+    color: var(--text-soft);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+}
+
+.profile-user-record__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.9rem;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+}
+
+.profile-user-record__actions {
+    display: grid;
+    gap: 0.45rem;
+    justify-items: end;
+    text-align: right;
+}
+
+.profile-user-record__actions form {
+    margin: 0;
+}
+
+.profile-user-record__actions .button {
+    min-width: 8.75rem;
+}
+
 .result-list {
     display: grid;
     gap: 0.65rem;
@@ -3137,6 +3485,10 @@ body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-
         width: 100%;
     }
 
+    body[data-page="inventory.add_supply_view"] .add-supply-form .form-section--photo {
+        position: static;
+    }
+
     .auth-layout__scrim {
         background:
             linear-gradient(180deg, rgba(18, 27, 22, 0.62) 0%, rgba(18, 27, 22, 0.28) 36%, rgba(245, 240, 230, 0.84) 100%),
@@ -3238,6 +3590,26 @@ body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-
         grid-template-columns: 1fr;
     }
 
+    body[data-page="inventory.add_supply_view"] .add-supply-form__section--identity .field-grid,
+    body[data-page="inventory.add_supply_view"] .add-supply-form__stock-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-preview__hero,
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card .transaction-math {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-admin-stats,
+    .profile-user-record {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-user-record__actions {
+        justify-items: start;
+        text-align: left;
+    }
+
     .inventory-preview-shell__hero img,
     .transaction-preview__hero img {
         width: 100%;
@@ -3266,6 +3638,36 @@ body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-
     .brand {
         gap: 0.7rem;
         padding-right: 0.9rem;
+    }
+
+    body[data-page="inventory.add_supply_view"] .add-supply-form {
+        padding: 0.78rem;
+    }
+
+    body[data-page="inventory.add_supply_view"] .add-supply-form__section,
+    body[data-page="inventory.add_supply_view"] .add-supply-form__aside .form-section--photo {
+        padding: 0.78rem;
+    }
+
+    body[data-page="inventory.add_supply_view"] .add-supply-form .camera-actions {
+        display: grid;
+    }
+
+    body[data-page="inventory.add_supply_view"] .add-supply-form .camera-actions .button {
+        width: 100%;
+    }
+
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card {
+        padding: 0.78rem;
+    }
+
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card .form-section,
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card__preview {
+        padding: 0.78rem;
+    }
+
+    body[data-page="inventory.issue_supply_view"] .issue-flow-card .button[type="submit"] {
+        width: 100%;
     }
 
     .dashboard-insights {
@@ -3311,6 +3713,25 @@ body[data-page="auth.login"] .auth-layout--immersive .auth-panel--intro .metric-
     .dashboard-card__header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .profile-user-record {
+        padding-left: 0;
+        padding-right: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .profile-user-record__identity {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-user-record__actions,
+    .profile-user-record__actions .button {
+        width: 100%;
     }
 
     .dashboard-summary__header strong,

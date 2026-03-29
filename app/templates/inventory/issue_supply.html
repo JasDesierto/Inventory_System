@@ -21,20 +21,20 @@
         </label>
         <div id="issue-results" class="result-list result-list--compact"></div>
     </div>
-    <form class="card form-stack" method="post" id="issue-form">
+    <form class="card form-stack issue-flow-card" method="post" id="issue-form">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="supply_id" id="issue-supply-id" value="{{ selected_supply_id or '' }}">
-        <section class="form-section form-section--compact">
+        <section class="form-section form-section--compact issue-flow-card__intro">
             <div class="section-heading">
                 <p class="eyebrow">Selected item</p>
                 <h2>Preview before issuing</h2>
             </div>
             <p class="panel-note">Check the current balance, then confirm how much stock will remain after issue.</p>
         </section>
-        <div id="issue-preview" class="detail-panel detail-panel--empty">
+        <div id="issue-preview" class="detail-panel detail-panel--empty issue-flow-card__preview">
             <p>Select an item to see its stock details.</p>
         </div>
-        <section class="form-section">
+        <section class="form-section issue-flow-card__details">
             <div class="section-heading">
                 <p class="eyebrow">Issue details</p>
                 <h2>Outgoing transaction</h2>
@@ -50,7 +50,7 @@
                 </label>
             </div>
         </section>
-        <section class="form-section form-section--transaction">
+        <section class="form-section form-section--transaction issue-flow-card__math">
             <div class="section-heading">
                 <p class="eyebrow">Stock math</p>
                 <h2>Review the resulting stock</h2>

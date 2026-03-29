@@ -10,10 +10,10 @@
     </div>
 </section>
 <section class="form-layout form-layout--add">
-    <form class="card form-stack admin-form admin-form--with-aside" method="post" enctype="multipart/form-data">
+    <form class="card form-stack admin-form admin-form--with-aside add-supply-form" method="post" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <div class="admin-form__main">
-            <section class="form-section">
+        <div class="admin-form__main add-supply-form__main">
+            <section class="form-section add-supply-form__section add-supply-form__section--identity">
                 <div class="section-heading">
                     <p class="eyebrow">Item identity</p>
                     <h2>Supply information</h2>
@@ -23,40 +23,6 @@
                         <span>Item name</span>
                         <input type="text" name="item_name" value="{{ request.form.get('item_name', '') }}" required>
                     </label>
-                    <label class="field field--full">
-                        <span>Description</span>
-                        <textarea name="description" rows="4" required>{{ request.form.get('description', '') }}</textarea>
-                    </label>
-                </div>
-            </section>
-
-            <section class="form-section">
-                <div class="section-heading">
-                    <p class="eyebrow">Stock details</p>
-                    <h2>Opening stock</h2>
-                </div>
-                <div class="field-grid">
-                    <label class="field">
-                        <span>Unit of measure</span>
-                        <input type="text" name="unit" value="{{ request.form.get('unit', '') }}" placeholder="boxes, reams, pcs" required>
-                    </label>
-                    <label class="field">
-                        <span>Opening quantity</span>
-                        <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
-                    </label>
-                    <label class="field">
-                        <span>Minimum quantity</span>
-                        <input type="number" name="minimum_quantity" min="0" value="{{ request.form.get('minimum_quantity', 0) }}" required>
-                    </label>
-                </div>
-            </section>
-
-            <section class="form-section">
-                <div class="section-heading">
-                    <p class="eyebrow">Classification and location</p>
-                    <h2>Storage context</h2>
-                </div>
-                <div class="field-grid">
                     <label class="field">
                         <span>Category</span>
                         <select name="category" required>
@@ -67,27 +33,43 @@
                         </select>
                     </label>
                     <label class="field">
+                        <span>Unit of measure</span>
+                        <input type="text" name="unit" value="{{ request.form.get('unit', '') }}" placeholder="boxes, reams, pcs" required>
+                    </label>
+                    <label class="field">
                         <span>Location</span>
                         <input type="text" name="location" value="{{ request.form.get('location', '') }}">
+                    </label>
+                    <label class="field field--full">
+                        <span>Description</span>
+                        <textarea name="description" rows="3" required>{{ request.form.get('description', '') }}</textarea>
                     </label>
                 </div>
             </section>
 
-            <section class="form-section">
+            <section class="form-section add-supply-form__section add-supply-form__section--stock">
                 <div class="section-heading">
-                    <p class="eyebrow">Notes</p>
-                    <h2>Initial transaction context</h2>
+                    <p class="eyebrow">Opening stock</p>
+                    <h2>Quantity and entry notes</h2>
                 </div>
-                <div class="field-grid">
-                    <label class="field field--full">
+                <div class="field-grid add-supply-form__stock-grid">
+                    <label class="field">
+                        <span>Opening quantity</span>
+                        <input type="number" name="quantity" min="1" value="{{ request.form.get('quantity', '') }}" required>
+                    </label>
+                    <label class="field">
+                        <span>Minimum quantity</span>
+                        <input type="number" name="minimum_quantity" min="0" value="{{ request.form.get('minimum_quantity', 0) }}" required>
+                    </label>
+                    <label class="field add-supply-form__remarks">
                         <span>Remarks</span>
-                        <textarea name="remarks" rows="3">{{ request.form.get('remarks', '') }}</textarea>
+                        <textarea name="remarks" rows="2">{{ request.form.get('remarks', '') }}</textarea>
                     </label>
                 </div>
             </section>
         </div>
 
-        <aside class="admin-form__aside">
+        <aside class="admin-form__aside add-supply-form__aside">
             <section class="form-section form-section--photo" data-photo-capture-root data-preview-empty="Choose a file or capture a photo to preview it here.">
                 <input type="hidden" name="photo_source" value="{{ photo_source }}" data-capture-mode-input>
                 <input type="hidden" name="captured_photo_data" value="" data-captured-photo>

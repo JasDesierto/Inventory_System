@@ -52,9 +52,17 @@
                 {% endif %}
             </nav>
             <div class="topbar__meta">
+                {% set name_parts = (current_user.full_name or '').split() %}
+                {% set fallback_initials = ((name_parts[0][0] if name_parts else (current_user.username or 'U')[0]) ~ (name_parts[1][0] if name_parts|length > 1 else ''))|upper %}
                 <a class="user-pill user-pill--link {{ 'is-active' if request.endpoint == 'inventory.profile_view' else '' }}" href="{{ url_for('inventory.profile_view') }}" aria-label="Open profile page">
-                    <span>{{ current_user.full_name }}</span>
-                    <strong>{{ current_user.role|title }}</strong>
+                    {% if current_user.avatar_path %}
+                        <img class="user-pill__avatar" src="{{ photo_url_for(current_user.avatar_path) }}" alt="{{ current_user.full_name }}">
+                    {% else %}
+                        <span class="user-pill__avatar user-pill__avatar--fallback" aria-hidden="true">{{ fallback_initials }}</span>
+                    {% endif %}
+                    <span class="user-pill__copy">
+                        <strong class="user-pill__name">{{ current_user.full_name }}</strong>
+                    </span>
                 </a>
                 <form method="post" action="{{ url_for('auth.logout') }}">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

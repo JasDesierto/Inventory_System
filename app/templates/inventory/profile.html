@@ -122,6 +122,84 @@
                 </div>
             </form>
         </article>
+
+        {% if current_user.is_admin and user_directory %}
+            <article class="card profile-card profile-card--admin">
+                <div class="section-heading profile-card__header">
+                    <div>
+                        <p class="eyebrow">Administration</p>
+                        <h2>User access</h2>
+                    </div>
+                    <p class="panel-note">Review every account registered in the inventory system. Deleting a user transfers any linked stock ownership and transaction history to the audit admin account.</p>
+                </div>
+
+                <div class="profile-admin-stats" aria-label="User account summary">
+                    <article class="stat-card">
+                        <span>Total users</span>
+                        <strong>{{ user_directory.total_users }}</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span>Admin accounts</span>
+                        <strong>{{ user_directory.admin_users }}</strong>
+                    </article>
+                    <article class="stat-card">
+                        <span>Removable now</span>
+                        <strong>{{ user_directory.deletable_users }}</strong>
+                    </article>
+                </div>
+
+                <div class="profile-user-directory" aria-label="Registered users">
+                    {% for managed_user in user_directory.users %}
+                        <article class="profile-user-record">
+                            <div class="profile-user-record__identity">
+                                <div class="profile-user-record__avatar-shell">
+                                    {% if managed_user.user.avatar_path %}
+                                        <img class="profile-user-record__avatar" src="{{ managed_user.avatar_url }}" alt="{{ managed_user.user.full_name }}">
+                                    {% else %}
+                                        <div class="profile-user-record__avatar profile-user-record__avatar--fallback" aria-hidden="true">{{ managed_user.initials }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="profile-user-record__copy">
+                                    <div class="profile-user-record__headline">
+                                        <h3>{{ managed_user.user.full_name }}</h3>
+                                        <span class="badge badge--{{ 'success' if managed_user.user.is_admin else 'neutral' }}">{{ managed_user.user.role|title }}</span>
+                                        {% if managed_user.is_audit_owner %}
+                                            <span class="badge badge--success">Audit owner</span>
+                                        {% endif %}
+                                        <span class="badge badge--{{ 'warning' if managed_user.can_delete else 'neutral' }}">{{ 'Can delete' if managed_user.can_delete else 'Protected' }}</span>
+                                    </div>
+                                    <p class="profile-user-record__username">@{{ managed_user.user.username }}</p>
+                                    <div class="profile-user-record__meta">
+                                        <span>Created {{ managed_user.created_label }}</span>
+                                        <span>{{ managed_user.supply_count }} supplies</span>
+                                        <span>{{ managed_user.transaction_count }} transactions</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="profile-user-record__actions">
+                                {% if managed_user.can_delete %}
+                                    <form method="post" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="profile_action" value="delete_user">
+                                        <input type="hidden" name="user_id" value="{{ managed_user.user.id }}">
+                                        <button class="button button--danger" type="submit">Delete User</button>
+                                    </form>
+                                    <p class="panel-note">
+                                        {% if managed_user.will_transfer_history %}
+                                            Linked records will move to the audit admin account when this user is deleted.
+                                        {% else %}
+                                            No linked inventory history was found for this account.
+                                        {% endif %}
+                                    </p>
+                                {% else %}
+                                    <p class="panel-note">{{ managed_user.delete_reason }}</p>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </article>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

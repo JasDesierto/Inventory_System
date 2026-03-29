@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from .constants import SUPPLY_CATEGORIES, display_supply_category
 from .decorators import role_required
 from .extensions import db
-from .models import StockTransaction, Supply
+from .models import StockTransaction, Supply, User
 from .services import (
     InventoryError,
     add_new_supply,
@@ -46,6 +46,70 @@ def _user_avatar_url(user):
 def _user_initials(user):
     parts = [part[:1].upper() for part in (user.full_name or "").split() if part]
     return "".join(parts[:2]) or (user.username[:2].upper() if user.username else "U")
+
+
+def _inventory_audit_owner(*, exclude_user_id=None):
+    admins = User.query.filter_by(role="admin").order_by(User.created_at.asc(), User.id.asc()).all()
+    if exclude_user_id is not None:
+        admins = [admin for admin in admins if admin.id != exclude_user_id]
+
+    if not admins:
+        return None
+
+    preferred_username = (current_app.config.get("SEED_ADMIN_USERNAME") or "").strip().lower()
+    if preferred_username:
+        for admin in admins:
+            if (admin.username or "").strip().lower() == preferred_username:
+                return admin
+
+    return admins[0]
+
+
+def _profile_user_directory(admin_user):
+    admin_count = User.query.filter_by(role="admin").count()
+    audit_owner = _inventory_audit_owner()
+    rows = (
+        db.session.query(
+            User,
+            func.count(func.distinct(Supply.id)).label("supply_count"),
+            func.count(func.distinct(StockTransaction.id)).label("transaction_count"),
+        )
+        .outerjoin(Supply, Supply.created_by == User.id)
+        .outerjoin(StockTransaction, StockTransaction.performed_by == User.id)
+        .group_by(User.id)
+        .order_by((User.role == "admin").desc(), User.created_at.asc(), User.full_name.asc())
+        .all()
+    )
+
+    directory = []
+    for user, supply_count, transaction_count in rows:
+        delete_reason = None
+        if user.id == admin_user.id:
+            delete_reason = "Signed in with this account."
+        elif user.is_admin and admin_count <= 1:
+            delete_reason = "This is the only admin account."
+
+        directory.append(
+            {
+                "user": user,
+                "avatar_url": _user_avatar_url(user),
+                "initials": _user_initials(user),
+                "created_label": user.created_at.strftime("%d %b %Y"),
+                "supply_count": supply_count,
+                "transaction_count": transaction_count,
+                "can_delete": delete_reason is None,
+                "delete_reason": delete_reason,
+                "is_audit_owner": bool(audit_owner and audit_owner.id == user.id),
+                "will_transfer_history": bool(supply_count or transaction_count),
+            }
+        )
+
+    return {
+        "users": directory,
+        "total_users": len(directory),
+        "admin_users": sum(1 for entry in directory if entry["user"].is_admin),
+        "deletable_users": sum(1 for entry in directory if entry["can_delete"]),
+    }
 
 
 def _status_tone(status):
@@ -264,13 +328,60 @@ def profile_view():
             flash("Profile image updated.", "success")
             return redirect(url_for("inventory.profile_view"))
 
+        if action == "delete_user":
+            if not current_user.is_admin:
+                abort(403)
+
+            user_id = request.form.get("user_id", type=int)
+            target_user = db.session.get(User, user_id) if user_id else None
+            if not target_user:
+                flash("That account no longer exists.", "warning")
+                return redirect(url_for("inventory.profile_view"))
+
+            if target_user.id == current_user.id:
+                flash("You cannot delete the account that is currently signed in.", "warning")
+                return redirect(url_for("inventory.profile_view"))
+
+            remaining_admin_count = User.query.filter_by(role="admin").count() - (1 if target_user.is_admin else 0)
+            if target_user.is_admin and remaining_admin_count < 1:
+                flash("You cannot remove the only admin account.", "danger")
+                return redirect(url_for("inventory.profile_view"))
+
+            audit_owner = _inventory_audit_owner(exclude_user_id=target_user.id)
+            if not audit_owner:
+                flash("No admin account is available to retain inventory history.", "danger")
+                return redirect(url_for("inventory.profile_view"))
+
+            avatar_path = target_user.avatar_path
+            deleted_name = target_user.full_name
+            linked_supply_count = Supply.query.filter_by(created_by=target_user.id).count()
+            linked_transaction_count = StockTransaction.query.filter_by(performed_by=target_user.id).count()
+            Supply.query.filter_by(created_by=target_user.id).update({"created_by": audit_owner.id})
+            StockTransaction.query.filter_by(performed_by=target_user.id).update({"performed_by": audit_owner.id})
+            db.session.delete(target_user)
+            db.session.commit()
+
+            if avatar_path:
+                delete_uploaded_image(avatar_path)
+
+            if linked_supply_count or linked_transaction_count:
+                flash(
+                    f"{deleted_name} was deleted. Linked inventory history was reassigned to {audit_owner.full_name}.",
+                    "success",
+                )
+            else:
+                flash(f"{deleted_name} was deleted.", "success")
+            return redirect(url_for("inventory.profile_view"))
+
         flash("That profile action is not available.", "warning")
         return redirect(url_for("inventory.profile_view"))
 
+    user_directory = _profile_user_directory(current_user) if current_user.is_admin else None
     return render_template(
         "inventory/profile.html",
         avatar_url=_user_avatar_url(current_user),
         user_initials=_user_initials(current_user),
+        user_directory=user_directory,
     )
 
 
@@ -308,6 +419,9 @@ def add_supply_view():
     if request.method == "POST":
         photo_path = None
         try:
+            audit_owner = _inventory_audit_owner()
+            if not audit_owner:
+                raise InventoryError("No admin account is available to own inventory records.")
             photo_path = save_form_image(
                 request.files.get("photo"),
                 request.form.get("captured_photo_data"),
@@ -322,7 +436,7 @@ def add_supply_view():
                 location=request.form.get("location"),
                 photo_path=photo_path,
                 remarks=request.form.get("remarks"),
-                created_by=current_user,
+                created_by=audit_owner,
             )
             flash(f"{supply.item_name} was added to inventory.", "success")
             return redirect(url_for("inventory.supply_detail", supply_id=supply.id))
@@ -340,12 +454,15 @@ def restock_supply_view():
     selected_supply_id = request.args.get("supply_id", type=int)
     if request.method == "POST":
         try:
+            audit_owner = _inventory_audit_owner()
+            if not audit_owner:
+                raise InventoryError("No admin account is available to own inventory records.")
             supply = restock_supply(
                 supply_id=request.form.get("supply_id", type=int),
                 category=request.form.get("category"),
                 quantity=request.form.get("quantity"),
                 remarks=request.form.get("remarks"),
-                performed_by=current_user,
+                performed_by=audit_owner,
             )
             flash(f"{supply.item_name} was restocked successfully.", "success")
             return redirect(url_for("inventory.supply_detail", supply_id=supply.id))
@@ -370,11 +487,14 @@ def issue_supply_view():
     selected_supply_id = request.args.get("supply_id", type=int)
     if request.method == "POST":
         try:
+            audit_owner = _inventory_audit_owner()
+            if not audit_owner:
+                raise InventoryError("No admin account is available to own inventory records.")
             supply = issue_supply(
                 supply_id=request.form.get("supply_id", type=int),
                 quantity=request.form.get("quantity"),
                 remarks=request.form.get("remarks"),
-                performed_by=current_user,
+                performed_by=audit_owner,
             )
             flash(f"{supply.item_name} was issued successfully.", "success")
             return redirect(url_for("inventory.supply_detail", supply_id=supply.id))
