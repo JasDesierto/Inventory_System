@@ -7,6 +7,8 @@
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <script nonce="{{ csp_nonce }}">
         try {
+            // Preserve a one-time marker so the destination page can animate
+            // differently after a successful login transition.
             if (sessionStorage.getItem("app-entry-from-login") === "1") {
                 document.documentElement.classList.add("from-login-entry");
                 sessionStorage.removeItem("app-entry-from-login");
@@ -22,6 +24,8 @@
     {% block head %}{% endblock %}
 </head>
 {% set use_landing_shell = request.endpoint == 'auth.login' or not current_user.is_authenticated %}
+{# The app uses two shells: a landing/auth shell for signed-out pages and the
+   full navigation shell for authenticated inventory work. #}
 <body class="{% if use_landing_shell %}body--landing{% else %}body--app{% endif %}" data-page="{{ request.endpoint or '' }}">
     <div class="ambient ambient--left"></div>
     <div class="ambient ambient--right"></div>
@@ -74,6 +78,7 @@
     <main class="page-shell {% if use_landing_shell %}page-shell--auth{% endif %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
+                {# Flash messages surface validation and workflow outcomes after redirects. #}
                 <section class="flash-stack">
                     {% for category, message in messages %}
                         <div class="flash flash--{{ category }}">{{ message }}</div>

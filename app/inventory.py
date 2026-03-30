@@ -471,6 +471,8 @@ def add_supply_view():
 @inventory_bp.route("/inventory/restock", methods=["GET", "POST"])
 @login_required
 def restock_supply_view():
+    # This screen is the stock-in workflow: pick an existing item, preview the
+    # resulting balance, then delegate the update to the service layer.
     selected_supply_id = request.args.get("supply_id", type=int)
     if request.method == "POST":
         try:
@@ -504,6 +506,8 @@ def restock_supply_view():
 @inventory_bp.route("/inventory/issue", methods=["GET", "POST"])
 @login_required
 def issue_supply_view():
+    # This mirrors restock, but only exposes items with available quantity and
+    # routes the final validation through the issue service.
     selected_supply_id = request.args.get("supply_id", type=int)
     if request.method == "POST":
         try:
@@ -535,6 +539,8 @@ def issue_supply_view():
 @inventory_bp.route("/inventory/<int:supply_id>")
 @login_required
 def supply_detail(supply_id):
+    # Detail is the canonical per-item view; nearby screens link back here
+    # after add, restock, and issue operations complete.
     supply = Supply.query.get_or_404(supply_id)
     return render_template("inventory/detail.html", supply=supply, supply_json=_supply_payload(supply))
 
@@ -553,6 +559,8 @@ def delete_supply_view(supply_id):
 @login_required
 @role_required("admin")
 def transaction_history():
+    # History is admin-only because it exposes the full transaction ledger
+    # across every item and every user.
     transactions = StockTransaction.query.order_by(StockTransaction.created_at.desc()).all()
     return render_template("inventory/history.html", transactions=transactions)
 
@@ -560,6 +568,8 @@ def transaction_history():
 @inventory_bp.route("/inventory/stock-card")
 @login_required
 def stock_card_view():
+    # The stock-card page starts with lightweight supply data and lets the
+    # browser fetch the full printable ledger on demand.
     selected_supply_id = request.args.get("supply_id", type=int)
     initial_category = request.args.get("category", "").strip()
     supplies = search_supplies()
@@ -925,6 +935,7 @@ def analytics():
 @inventory_bp.route("/api/supplies")
 @login_required
 def supply_api():
+    # This API backs the interactive inventory browser filters in the frontend.
     supplies = search_supplies(
         query_text=request.args.get("q"),
         category=request.args.get("category"),
@@ -938,5 +949,7 @@ def supply_api():
 @inventory_bp.route("/api/supplies/<int:supply_id>/stock-card")
 @login_required
 def supply_stock_card_api(supply_id):
+    # The printable stock-card sheet is loaded separately so the page does not
+    # render every ledger up front.
     supply = Supply.query.get_or_404(supply_id)
     return jsonify(_stock_card_payload(supply))

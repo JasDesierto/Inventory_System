@@ -12,6 +12,8 @@ from .inventory import (
     search_supplies,
 )
 
+# Re-export the inventory service helpers so route modules can import from
+# `app.services` without coupling to the file layout.
 __all__ = [
     "InventoryError",
     "add_new_supply",
