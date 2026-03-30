@@ -47,6 +47,7 @@ Notes:
 - The repo now includes `psycopg2-binary` for PostgreSQL connectivity
 - URL-encode the database password before placing it in `DATABASE_URL` if it contains special characters such as `@`, `:`, `/`, or `?`
 - `flask --app run:app init-db` creates the schema in the target Supabase database
+- On hosts without shell access, set `AUTO_SEED_ON_START=1` to seed the initial accounts automatically when the database is empty
 - Existing data in `instance/inventory.db` is not migrated automatically
 
 Production behavior now enforces these guardrails:

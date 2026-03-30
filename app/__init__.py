@@ -5,7 +5,7 @@ from flask_login import current_user
 from sqlalchemy import inspect, text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from .cli import register_cli
+from .cli import register_cli, seed_database
 from .config import Config
 from .extensions import db, login_manager
 from .security import (
@@ -170,5 +170,8 @@ def create_app(config_object=None):
         from .models import Supply
 
         migrate_public_uploads(db, Supply)
+        if app.config.get("AUTO_SEED_ON_START") and User.query.count() == 0:
+            seed_database(app)
+            app.logger.info("Initial database seed completed during startup.")
 
     return app

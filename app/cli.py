@@ -144,6 +144,18 @@ def _seed_inventory(admin, erla, april):
     )
 
 
+def seed_database(app, force=False):
+    if force:
+        StockTransaction.query.delete()
+        Supply.query.delete()
+        User.query.delete()
+        db.session.commit()
+
+    admin, erla, april, credentials = _seed_users(app)
+    _seed_inventory(admin, erla, april)
+    return credentials
+
+
 def register_cli(app):
     @app.cli.command("init-db")
     @click.option("--drop", is_flag=True, help="Drop all tables before recreating them.")
@@ -156,14 +168,7 @@ def register_cli(app):
     @app.cli.command("seed")
     @click.option("--force", is_flag=True, help="Clear existing records before seeding.")
     def seed(force):
-        if force:
-            StockTransaction.query.delete()
-            Supply.query.delete()
-            User.query.delete()
-            db.session.commit()
-
-        admin, erla, april, credentials = _seed_users(app)
-        _seed_inventory(admin, erla, april)
+        credentials = seed_database(app, force=force)
 
         credential_parts = []
         generated_accounts = []

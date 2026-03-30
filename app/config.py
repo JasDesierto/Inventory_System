@@ -46,6 +46,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///inventory.db")
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    AUTO_SEED_ON_START = _env_bool("AUTO_SEED_ON_START", False)
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
     UPLOAD_FOLDER = str(BASE_DIR.parent / "instance" / "uploads")
