@@ -55,6 +55,12 @@ pip install -r requirements.txt
 
 Use `.env.example` as the starting point for a local office or developer install.
 
+This project reads settings directly from process environment variables. It does not load `.env` files automatically in Python code, so for local use you must either:
+
+- Export the variables in your shell before starting the app
+- Use your IDE or process manager to inject them
+- Use a launcher that reads `.env.example` and sets the environment before running Flask or Waitress
+
 Recommended values in local use:
 
 - `APP_ENV=development`
@@ -104,6 +110,13 @@ Important settings used by this project:
 - `SEED_ADMIN_PASSWORD`: optional password for the bootstrap `admin` account
 - `PORT`: listening port used by Waitress and container deployments
 
+Examples:
+
+- `TRUSTED_HOSTS=inventory.company.local`
+- `TRUSTED_HOSTS=inventory.company.local,inventory`
+- `DATABASE_URL=sqlite:///inventory.db`
+- `DATABASE_URL=postgresql+psycopg2://user:password@db-host:5432/inventory`
+
 ## Default Accounts And Seeding
 
 The app includes CLI support for first-run setup.
@@ -129,6 +142,8 @@ For predictable bootstrap credentials, define:
 
 Use `.env.render.example` as the production template, then adjust it for your host.
 
+In a normal office deployment, IT owns the server, DNS, TLS certificate, firewall rules, service registration, and environment variables. The application only needs the final hostname(s) reflected in `TRUSTED_HOSTS`.
+
 Minimum production requirements:
 
 - `APP_ENV=production`
@@ -143,6 +158,22 @@ Recommended production settings:
 - `AUTO_SEED_ON_START=0` after initial provisioning
 - `PROXY_FIX_X_FOR=1` and `PROXY_FIX_X_PROTO=1` when running behind a reverse proxy that sets forwarded headers correctly
 
+Typical internal example:
+
+```env
+APP_ENV=production
+SECRET_KEY=replace-with-a-32-plus-character-random-secret
+DATABASE_URL=sqlite:///inventory.db
+SESSION_COOKIE_SECURE=1
+TRUSTED_HOSTS=inventory.company.local
+ALLOW_SELF_SIGNUP=0
+AUTO_SEED_ON_START=0
+PROXY_FIX_X_FOR=1
+PROXY_FIX_X_PROTO=1
+SEED_ADMIN_PASSWORD=replace-with-a-strong-admin-password
+PORT=8000
+```
+
 The app will refuse to start in production if:
 
 - `SECRET_KEY` is missing, default, or too short
@@ -151,11 +182,48 @@ The app will refuse to start in production if:
 
 ### Waitress Deployment
 
+If the app is behind IIS, nginx, Apache, or another reverse proxy on the same server, prefer binding Waitress to `127.0.0.1`. Use `0.0.0.0` only when the app must be reached directly from the LAN.
+
 ```bash
 pip install -r requirements.txt
 flask --app run:app init-db
 flask --app run:app seed
-waitress-serve --listen=0.0.0.0:8000 wsgi:app
+waitress-serve --listen=127.0.0.1:8000 wsgi:app
+```
+
+First-run note:
+
+- Run `seed` during controlled provisioning only
+- After the first successful login, keep `AUTO_SEED_ON_START=0`
+- If IT wants predictable bootstrap credentials, set `SEED_ADMIN_PASSWORD` before running `seed`
+
+### Windows / Office IT Pattern
+
+Typical handoff to internal IT looks like this:
+
+1. Pull the repository onto the target server.
+2. Create a virtual environment and install `requirements.txt`.
+3. Set system or service-level environment variables from `.env.render.example`.
+4. Set `TRUSTED_HOSTS` to the office hostname IT created, such as `inventory.company.local`.
+5. Run `flask --app run:app init-db`.
+6. Run `flask --app run:app seed`.
+7. Run Waitress as a Windows service or scheduled startup task using `wsgi:app`.
+8. Configure IIS or another reverse proxy to terminate HTTPS and forward traffic to `127.0.0.1:8000`.
+
+PowerShell example for an ad hoc manual start:
+
+```powershell
+$env:APP_ENV="production"
+$env:SECRET_KEY="replace-with-a-32-plus-character-random-secret"
+$env:DATABASE_URL="sqlite:///inventory.db"
+$env:SESSION_COOKIE_SECURE="1"
+$env:TRUSTED_HOSTS="inventory.company.local"
+$env:ALLOW_SELF_SIGNUP="0"
+$env:AUTO_SEED_ON_START="0"
+$env:PROXY_FIX_X_FOR="1"
+$env:PROXY_FIX_X_PROTO="1"
+$env:SEED_ADMIN_PASSWORD="replace-with-a-strong-admin-password"
+waitress-serve --listen=127.0.0.1:8000 wsgi:app
 ```
 
 ### PostgreSQL / Supabase Example
@@ -205,8 +273,10 @@ Container notes:
 For a stable office deployment, IT should own the following:
 
 - Environment file and secret management
+- Injection of environment variables into the Windows service, IIS app pool, container, or host
 - Database backups
 - Backup of `instance/uploads` together with the database
+- DNS record creation for the chosen office hostname
 - HTTPS termination and trusted host configuration
 - Controlled creation or reset of admin credentials
 - Disabling self-signup if public registration is not desired
@@ -215,5 +285,6 @@ Recommended operating practice:
 
 - Run `seed` only during controlled setup, not on every deployment
 - Keep `AUTO_SEED_ON_START=0` after initial provisioning
+- Keep Waitress bound to `127.0.0.1` when a reverse proxy is in front of it
 - Test the login flow and a sample upload after each deployment
 - Review `RELEASE_CHECKLIST.md` before production rollout or rollback
