@@ -19,7 +19,32 @@ Set `SECRET_KEY` before running outside local development.
 - `SEED_ERLA_PASSWORD`
 - `SEED_APRIL_PASSWORD`
 
-## Production Checklist
+## Local Office Setup
+
+Use [.env.example](c:/Users/jaste/Inventory_System/.env.example) as the default local-office template. It is configured for:
+
+- local SQLite storage
+- visible self-signup
+- automatic first-run seeding when the database is empty
+
+Recommended local flow:
+
+```bash
+pip install -r requirements.txt
+waitress-serve --listen=127.0.0.1:8000 wsgi:app
+```
+
+Notes:
+
+- The local database lives at `instance/inventory.db`
+- Protected uploads live under `instance/uploads`
+- After the first successful startup, set `AUTO_SEED_ON_START=0` if you no longer want startup seeding checks
+- Use `127.0.0.1` if the app runs only on one computer
+- Use `0.0.0.0` only if other office computers need to reach it over the LAN
+
+## Hosted Deployment
+
+Use [.env.render.example](c:/Users/jaste/Inventory_System/.env.render.example) for Render or another hosted environment.
 
 Set these environment variables before deployment:
 
@@ -69,7 +94,8 @@ Operational notes:
 This repo now includes:
 
 - `wsgi.py` for production WSGI serving
-- `.env.example` as the deployment environment template
+- `.env.example` as the local-office environment template
+- `.env.render.example` as the hosted Render/Supabase template
 - `Dockerfile` for container packaging
 - `.dockerignore` to keep local state out of image builds
 - `RELEASE_CHECKLIST.md` for go-live and rollback steps
