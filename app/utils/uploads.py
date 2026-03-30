@@ -77,6 +77,8 @@ def _resolve_protected_path(relative_path):
 
 
 def _store_image_bytes(image_bytes, extension, original_name=None):
+    # Uploaded filenames are never trusted directly; a random name is generated
+    # and the original name is kept only as a sanitized suffix.
     _ensure_file_size(len(image_bytes))
 
     detected_extension = _detect_image_extension(image_bytes)
@@ -97,6 +99,8 @@ def _store_image_bytes(image_bytes, extension, original_name=None):
 
 
 def photo_url_for(photo_path):
+    # Protected uploads are served through an authenticated Flask route, while
+    # bundled placeholder/seed assets still come from /static.
     if is_protected_upload(photo_path):
         filename = photo_path.removeprefix(_protected_prefix())
         return url_for("inventory.uploaded_photo", filename=filename)
@@ -143,6 +147,8 @@ def save_captured_image(data_url):
 
 
 def save_form_image(file_storage: FileStorage, captured_data=None):
+    # Add-supply accepts either a traditional file upload or a camera capture
+    # from the browser, but never both as independent records.
     if file_storage and file_storage.filename:
         return save_uploaded_image(file_storage)
     if captured_data:

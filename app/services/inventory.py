@@ -30,6 +30,7 @@ def _to_int(value, field_name, minimum=None):
 
 
 def _status_for(quantity, minimum_quantity):
+    # Supply.status is derived data used by filters, badges, and analytics.
     if quantity <= 0:
         return "out_of_stock"
     if quantity <= minimum_quantity:
@@ -61,6 +62,8 @@ def add_new_supply(
     remarks,
     created_by,
 ):
+    # New supplies are created together with their first stock-in transaction so
+    # the audit history always starts at the initial quantity.
     item_name = _normalize_text(item_name)
     description = _normalize_text(description)
     category = _to_category(category, required=True)
@@ -123,6 +126,8 @@ def add_new_supply(
 
 
 def restock_supply(*, supply_id, category, quantity, remarks, performed_by):
+    # Restocking updates the supply snapshot and appends a matching "in"
+    # transaction for reporting and stock card generation.
     quantity = _to_int(quantity, "Restock quantity", minimum=1)
     category = _to_category(category, required=True)
     remarks = _normalize_text(remarks)
@@ -153,6 +158,8 @@ def restock_supply(*, supply_id, category, quantity, remarks, performed_by):
 
 
 def issue_supply(*, supply_id, quantity, remarks, performed_by):
+    # Issuing never allows stock to go negative; the supply row and transaction
+    # log stay in sync inside the same commit.
     quantity = _to_int(quantity, "Issue quantity", minimum=1)
     remarks = _normalize_text(remarks)
 
@@ -183,6 +190,8 @@ def issue_supply(*, supply_id, quantity, remarks, performed_by):
 
 
 def delete_supply(*, supply_id):
+    # The caller is responsible for deleting any stored image after the database
+    # delete succeeds.
     supply = Supply.query.get(supply_id)
     if not supply:
         raise InventoryError("The selected supply does not exist.")
@@ -205,6 +214,8 @@ def search_supplies(
     out_of_stock=False,
     limit=None,
 ):
+    # Search powers the main inventory browser and a few picker-style screens,
+    # so it supports both full filtering and simple capped result sets.
     query = Supply.query
     query_text = _normalize_text(query_text)
     category = normalize_supply_category(category)
@@ -267,6 +278,8 @@ def search_supplies(
 
 
 def get_dashboard_summary(limit_recent=8):
+    # Dashboard cards read from aggregate queries instead of iterating through
+    # every supply in Python.
     total_items = db.session.query(func.count(Supply.id)).scalar() or 0
     total_stock_units = db.session.query(func.coalesce(func.sum(Supply.current_quantity), 0)).scalar() or 0
     low_stock_count = (
@@ -330,6 +343,8 @@ def get_recent_stock_movement(limit=12):
 
 
 def get_monthly_stock_out_totals(months=6):
+    # Analytics expects a complete month-by-month series, including months with
+    # zero issues.
     current = datetime.utcnow()
     month_starts = []
     year = current.year

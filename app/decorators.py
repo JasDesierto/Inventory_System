@@ -5,6 +5,8 @@ from flask_login import current_user
 
 
 def role_required(*roles):
+    # Route-level authorization stays small and readable by delegating the
+    # role check to a decorator.
     def decorator(view):
         @wraps(view)
         def wrapped_view(*args, **kwargs):

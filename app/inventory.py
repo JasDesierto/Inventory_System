@@ -50,6 +50,8 @@ def _user_initials(user):
 
 
 def _inventory_audit_owner(*, exclude_user_id=None):
+    # Inventory records are intentionally owned by an admin account so history
+    # remains attributable even if staff users are deleted later.
     admins = User.query.filter_by(role="admin").order_by(User.created_at.asc(), User.id.asc()).all()
     if exclude_user_id is not None:
         admins = [admin for admin in admins if admin.id != exclude_user_id]
@@ -67,6 +69,8 @@ def _inventory_audit_owner(*, exclude_user_id=None):
 
 
 def _profile_user_directory(admin_user):
+    # The profile page doubles as a lightweight user-management screen for
+    # admins, so it precomputes counts and deletion rules for each account.
     admin_count = User.query.filter_by(role="admin").count()
     audit_owner = _inventory_audit_owner()
     rows = (
@@ -152,6 +156,8 @@ def _supply_payload(supply):
 
 
 def _stock_card_payload(supply):
+    # Stock cards are built from the transaction ledger in oldest-to-newest
+    # order so the printable form reads chronologically.
     transactions = (
         StockTransaction.query.filter_by(supply_id=supply.id)
         .order_by(StockTransaction.created_at.asc(), StockTransaction.id.asc())
@@ -186,6 +192,8 @@ def _stock_card_payload(supply):
 
 
 def _distinct_values(column):
+    # Filter dropdowns should only show non-empty values that actually exist in
+    # the current catalog.
     return [
         value
         for (value,) in db.session.query(column)
@@ -197,6 +205,8 @@ def _distinct_values(column):
 
 
 def _month_start(anchor=None, offset=0):
+    # Analytics compares month windows repeatedly, so month-boundary handling is
+    # centralized here.
     anchor = anchor or datetime.utcnow()
     year = anchor.year
     month = anchor.month + offset
@@ -218,12 +228,15 @@ def _percent_change(current, previous):
 @inventory_bp.route("/uploads/<path:filename>")
 @login_required
 def uploaded_photo(filename):
+    # Protected uploads are served only to authenticated users.
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename, max_age=0)
 
 
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard():
+    # Dashboard combines service-layer summaries with a few route-specific
+    # counts for today's activity cards.
     today_key = datetime.utcnow().date().isoformat()
     summary = get_dashboard_summary(limit_recent=5)
     low_stock_items = get_low_stock_items(limit=5)
@@ -278,6 +291,9 @@ def dashboard():
 @inventory_bp.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile_view():
+    # Profile POST actions are multiplexed through a single form endpoint so the
+    # account page can manage details, password, avatar, and admin-only user
+    # maintenance from one screen.
     if request.method == "POST":
         action = request.form.get("profile_action", "").strip()
 
@@ -358,6 +374,8 @@ def profile_view():
             deleted_name = target_user.full_name
             linked_supply_count = Supply.query.filter_by(created_by=target_user.id).count()
             linked_transaction_count = StockTransaction.query.filter_by(performed_by=target_user.id).count()
+            # Historical records are transferred before deletion so analytics,
+            # stock cards, and audit history remain intact.
             Supply.query.filter_by(created_by=target_user.id).update({"created_by": audit_owner.id})
             StockTransaction.query.filter_by(performed_by=target_user.id).update({"performed_by": audit_owner.id})
             db.session.delete(target_user)
@@ -390,6 +408,8 @@ def profile_view():
 @inventory_bp.route("/inventory")
 @login_required
 def inventory_list():
+    # The initial page render includes both server-rendered markup and a JSON
+    # payload that the browser uses for preview and filtering interactions.
     filters = {
         "q": request.args.get("q", "").strip(),
         "category": request.args.get("category", "").strip(),
@@ -421,6 +441,8 @@ def add_supply_view():
     if request.method == "POST":
         photo_path = None
         try:
+            # New supplies are attributed to the audit owner rather than the
+            # currently signed-in user to keep long-term record ownership stable.
             audit_owner = _inventory_audit_owner()
             if not audit_owner:
                 raise InventoryError("No admin account is available to own inventory records.")
@@ -443,6 +465,8 @@ def add_supply_view():
             flash(f"{supply.item_name} was added to inventory.", "success")
             return redirect(url_for("inventory.supply_detail", supply_id=supply.id))
         except (UploadError, InventoryError) as exc:
+            # If validation fails after an image was saved, remove the file so
+            # the uploads directory does not accumulate orphaned photos.
             if photo_path:
                 delete_uploaded_image(photo_path)
             flash(str(exc), "danger")
@@ -559,6 +583,9 @@ def stock_card_view():
 @login_required
 @role_required("admin")
 def analytics():
+    # This view assembles read-heavy metrics for the analytics dashboard. Most
+    # calculations stay here because they combine several overlapping business
+    # rules that are specific to the report presentation.
     now = datetime.utcnow()
     current_month_start = _month_start(now)
     previous_month_start = _month_start(now, -1)
@@ -633,6 +660,8 @@ def analytics():
     stockout_hits_last_month = 0
 
     for transaction in out_transactions:
+        # Issue transactions drive consumption trends, stock-out frequency, and
+        # "entered low stock" events for the KPI comparisons.
         stats = supply_stats[transaction.supply_id]
         stats["issued_total"] += transaction.quantity
         if stats["last_issue_at"] is None or transaction.created_at > stats["last_issue_at"]:
@@ -785,6 +814,8 @@ def analytics():
                 "summary": " | ".join(reasons[:2]) if reasons else "Monitor demand against the current stock level.",
             }
         )
+    # Higher score means higher urgency; the remaining sort keys keep the list
+    # deterministic for items with similar pressure.
     restock_priorities.sort(
         key=lambda item: (-item["score"], item["supply"].current_quantity, item["supply"].item_name.lower())
     )

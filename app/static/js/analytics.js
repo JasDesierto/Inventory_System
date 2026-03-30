@@ -1,6 +1,8 @@
 const analyticsNode = document.getElementById("analytics-data");
 
 if (analyticsNode && window.Chart) {
+    // Chart data is precomputed by the Flask view so this script only handles
+    // presentation, not business calculations.
     const data = JSON.parse(analyticsNode.textContent || "{}");
     const monthlyCanvas = document.getElementById("monthly-out-chart");
     const topCanvas = document.getElementById("top-issued-chart");

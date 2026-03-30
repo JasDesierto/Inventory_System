@@ -2,6 +2,8 @@ const inventoryScript = document.getElementById("inventory-data");
 const inventoryRoot = document.querySelector("[data-inventory-browser]");
 
 if (inventoryRoot && inventoryScript) {
+    // The inventory browser boots from server-rendered JSON, then refetches the
+    // list through the API when filters change.
     const endpoint = inventoryRoot.dataset.endpoint;
     const form = document.getElementById("inventory-filter-form");
     const resultsContainer = document.getElementById("inventory-results");
@@ -138,6 +140,8 @@ if (inventoryRoot && inventoryScript) {
     };
 
     const fetchItems = () => {
+        // FormData keeps checkbox/select/text filters aligned with the server's
+        // existing query parameter contract.
         const params = new URLSearchParams();
         new FormData(form).forEach((value, key) => {
             if (value) {
@@ -176,6 +180,8 @@ if (inventoryRoot && inventoryScript) {
         if (!button) {
             return;
         }
+        // Mobile reuses the same preview markup inside a drawer, while desktop
+        // keeps the preview pinned beside the result list.
         selectedId = Number(button.dataset.supplyId);
         const item = items.find((entry) => entry.id === selectedId);
         renderResults();

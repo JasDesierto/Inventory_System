@@ -7,6 +7,8 @@ from .extensions import db
 
 
 class User(UserMixin, db.Model):
+    # User accounts control login, role-based access, and ownership/audit links
+    # for supplies and stock transactions.
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -42,6 +44,8 @@ class User(UserMixin, db.Model):
 
 
 class Supply(db.Model):
+    # Supply is the current-state record for an inventory item. Quantity changes
+    # are persisted through StockTransaction records instead of manual edits.
     __tablename__ = "supplies"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -86,6 +90,8 @@ class Supply(db.Model):
 
 
 class StockTransaction(db.Model):
+    # Stock transactions form the audit trail for every stock-in and stock-out
+    # movement and preserve the before/after quantities for reporting.
     __tablename__ = "stock_transactions"
 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,6 +1,8 @@
 const issueDataNode = document.getElementById("issue-data");
 
 if (issueDataNode) {
+    // The issue screen uses preloaded stock data so the operator can search,
+    // preview, and validate quantities without extra round trips.
     const items = JSON.parse(issueDataNode.textContent || "[]");
     const searchInput = document.getElementById("issue-search");
     const quantityInput = document.getElementById("issue-quantity");
@@ -36,6 +38,8 @@ if (issueDataNode) {
     };
 
     const updateMath = (item) => {
+        // The live math panel mirrors the server-side validation rules and
+        // warns before a submission would create low stock or zero stock.
         const quantity = Math.max(0, Number(quantityInput?.value || 0));
         if (!item) {
             currentStockNode.textContent = "-";
@@ -162,6 +166,8 @@ if (issueDataNode) {
     });
 
     document.getElementById("issue-form").addEventListener("submit", (event) => {
+        // Client-side checks are only a fast guardrail; the Flask service layer
+        // still enforces the same rules authoritatively.
         const item = items.find((entry) => entry.id === selectedId);
         const quantity = Number(quantityInput?.value || 0);
         if (!hiddenInput.value || !item || quantity <= 0 || quantity > item.current_quantity) {

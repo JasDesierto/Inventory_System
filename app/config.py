@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def _env_bool(name, default=False):
+    # Environment parsing is kept forgiving so missing or invalid values fall
+    # back to safe defaults during deployment.
     value = os.environ.get(name)
     if value is None:
         return default
@@ -39,6 +41,8 @@ def _default_trusted_hosts():
 
 
 class Config:
+    # One central config object drives both local SQLite usage and hosted
+    # deployments that inject environment variables.
     APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
     IS_PRODUCTION = APP_ENV == "production"
     APP_NAME = "Office Inventory System"

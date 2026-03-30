@@ -15,6 +15,8 @@ SUPPLY_CATEGORIES = (
     "Others",
 )
 
+# Legacy aliases let older records still map cleanly into the current category
+# vocabulary used by filters and forms.
 LEGACY_CATEGORY_ALIASES = {
     "Presentation Supplies": "Office Accessories",
 }

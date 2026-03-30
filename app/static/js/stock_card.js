@@ -2,6 +2,8 @@ const stockCardDataNode = document.getElementById("stock-card-data");
 const stockCardRoot = document.querySelector("[data-stock-card-browser]");
 
 if (stockCardDataNode && stockCardRoot) {
+    // The stock-card page starts with summary supply data, then lazily loads the
+    // full ledger for only the currently selected item.
     const items = JSON.parse(stockCardDataNode.textContent || "[]");
     const categorySelect = document.getElementById("stock-card-category");
     const searchInput = document.getElementById("stock-card-search");
@@ -106,6 +108,8 @@ if (stockCardDataNode && stockCardRoot) {
     };
 
     const renderSheet = (card) => {
+        // Blank trailing rows keep the printable stock card visually consistent
+        // with the paper form even when the transaction history is short.
         const ledgerRows = card.ledger_rows || [];
         const trailingBlankRows = ledgerRows.length ? 4 : 5;
         const rows = ledgerRows
@@ -205,6 +209,8 @@ if (stockCardDataNode && stockCardRoot) {
         }
 
         const requestKey = ++activeRequestKey;
+        // A request key prevents slower responses from overwriting a newer
+        // selection when operators click through items quickly.
         sheet.className = "stock-card-sheet stock-card-sheet--loading";
         sheet.innerHTML = "<p>Loading stock card data...</p>";
 

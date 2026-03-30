@@ -26,6 +26,8 @@ def get_csrf_token():
 
 
 def validate_csrf():
+    # The app accepts the CSRF token from normal forms and from JS requests that
+    # send it in a custom header.
     expected_token = session.get(CSRF_SESSION_KEY)
     submitted_token = request.form.get("_csrf_token") or request.headers.get("X-CSRF-Token")
 
@@ -36,6 +38,8 @@ def validate_csrf():
 
 
 def is_safe_redirect_target(target):
+    # Post-login redirects are limited to same-origin URLs to avoid open
+    # redirect issues.
     if not target:
         return False
 
@@ -46,6 +50,8 @@ def is_safe_redirect_target(target):
 
 
 def validate_password_strength(password):
+    # Password rules are intentionally minimal but enforce length plus mixed
+    # character classes for staff-created accounts.
     password = password or ""
     if len(password) < 12:
         return "Password must be at least 12 characters long."
@@ -57,6 +63,8 @@ def validate_password_strength(password):
 
 
 def validate_runtime_security(app):
+    # Production startup fails fast when core security settings are missing so
+    # deployment mistakes do not quietly reach users.
     if not app.config.get("IS_PRODUCTION"):
         return
 
@@ -72,6 +80,8 @@ def validate_runtime_security(app):
 
 
 def build_csp_header():
+    # Script execution is locked down with a request-scoped nonce so inline
+    # handlers are unnecessary in templates.
     nonce = get_csp_nonce()
     directives = {
         "default-src": ["'self'"],

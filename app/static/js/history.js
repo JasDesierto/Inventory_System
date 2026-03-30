@@ -1,6 +1,8 @@
 const historyFilterForm = document.getElementById("history-filter-form");
 
 if (historyFilterForm) {
+    // History filtering is client-side because the full transaction list is
+    // already rendered for admins and the dataset is expected to stay modest.
     const rows = Array.from(document.querySelectorAll("[data-history-row]"));
     const tableBody = document.getElementById("history-table-body");
     const pagination = document.getElementById("history-pagination");
@@ -78,6 +80,8 @@ if (historyFilterForm) {
     };
 
     const render = () => {
+        // Pagination happens after filtering so page counts always reflect the
+        // active search constraints.
         const filteredRows = getFilteredRows();
         const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
         currentPage = Math.min(Math.max(currentPage, 1), totalPages);

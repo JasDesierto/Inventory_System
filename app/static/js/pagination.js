@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-pageable]").forEach((container) => {
+        // This generic paginator is reused by any server-rendered list that
+        // exposes pageable items and a matching controls target.
         const paginationKey = container.dataset.pageable;
         const controls = paginationKey
             ? document.querySelector(`[data-page-controls="${paginationKey}"]`)

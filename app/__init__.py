@@ -20,10 +20,13 @@ from .utils.uploads import migrate_public_uploads, photo_url_for
 
 
 def create_app(config_object=None):
+    # Application factory used by local runs, WSGI servers, and CLI commands.
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object or Config)
     validate_runtime_security(app)
 
+    # ProxyFix is enabled only when the deployment explicitly declares which
+    # forwarded headers can be trusted.
     if any(
         app.config.get(setting, 0) > 0
         for setting in (
@@ -43,6 +46,8 @@ def create_app(config_object=None):
             x_prefix=app.config["PROXY_FIX_X_PREFIX"],
         )
 
+    # Instance storage keeps the SQLite database and protected uploads outside
+    # the public static directory.
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
 
@@ -57,12 +62,16 @@ def create_app(config_object=None):
 
     @app.before_request
     def apply_request_security():
+        # Each request gets a fresh CSP nonce. Mutating requests must also pass
+        # the CSRF token check before any view code runs.
         ensure_request_nonce()
         if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             validate_csrf()
 
     @app.after_request
     def apply_response_security(response):
+        # Security headers are applied centrally so individual views do not need
+        # to repeat the same hardening rules.
         if request.endpoint != "static":
             response.headers["Content-Security-Policy"] = build_csp_header()
             response.headers["X-Content-Type-Options"] = "nosniff"
@@ -160,6 +169,8 @@ def create_app(config_object=None):
     register_cli(app)
 
     with app.app_context():
+        # This app relies on SQLAlchemy metadata for lightweight schema
+        # creation, then applies small compatibility fixes for older databases.
         db.create_all()
         inspector = inspect(db.engine)
         if inspector.has_table("users"):
@@ -169,6 +180,8 @@ def create_app(config_object=None):
                 db.session.commit()
         from .models import Supply
 
+        # Older uploads that lived under /static/uploads are migrated into the
+        # protected instance folder on startup.
         migrate_public_uploads(db, Supply)
         if app.config.get("AUTO_SEED_ON_START") and User.query.count() == 0:
             seed_database(app)

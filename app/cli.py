@@ -7,6 +7,8 @@ from .services.inventory import add_new_supply, issue_supply, restock_supply
 
 
 def _upsert_seed_user(*, username, full_name, role, password=None, update_password=False):
+    # Seed users are created idempotently so repeated `flask seed` runs update
+    # the known accounts instead of duplicating them.
     user = User.query.filter_by(username=username).first()
     if not user:
         user = User(username=username)
@@ -20,6 +22,8 @@ def _upsert_seed_user(*, username, full_name, role, password=None, update_passwo
 
 
 def _merge_legacy_staff(legacy_user, replacement_user):
+    # Older installs may still have a generic "staff" account. Its historical
+    # ownership is reassigned before the record is removed.
     Supply.query.filter_by(created_by=legacy_user.id).update({"created_by": replacement_user.id})
     StockTransaction.query.filter_by(performed_by=legacy_user.id).update(
         {"performed_by": replacement_user.id}
@@ -28,6 +32,8 @@ def _merge_legacy_staff(legacy_user, replacement_user):
 
 
 def _seed_users(app):
+    # Passwords are generated only for missing accounts unless the environment
+    # explicitly requests an override.
     configured_admin_password = app.config["SEED_ADMIN_PASSWORD"]
     configured_erla_password = app.config["SEED_ERLA_PASSWORD"]
     configured_april_password = app.config["SEED_APRIL_PASSWORD"]
@@ -83,6 +89,8 @@ def _seed_users(app):
 
 
 def _seed_inventory(admin, erla, april):
+    # Inventory seed data provides a realistic first-run catalog plus a small
+    # transaction history for dashboard and analytics views.
     if Supply.query.count() > 0:
         return
 
@@ -145,6 +153,7 @@ def _seed_inventory(admin, erla, april):
 
 
 def seed_database(app, force=False):
+    # `force=True` is intended for controlled resets during setup or testing.
     if force:
         StockTransaction.query.delete()
         Supply.query.delete()
@@ -157,6 +166,8 @@ def seed_database(app, force=False):
 
 
 def register_cli(app):
+    # Flask CLI commands mirror the operational tasks IT staff will need during
+    # installation and password recovery.
     @app.cli.command("init-db")
     @click.option("--drop", is_flag=True, help="Drop all tables before recreating them.")
     def init_db(drop):

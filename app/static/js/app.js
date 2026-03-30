@@ -22,6 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const startPageTransition = () => {
+        // Central page-exit state avoids repeated transition triggers from
+        // multiple clicks or rapid form submissions.
         if (pageIsLeaving) {
             return false;
         }
@@ -139,6 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll("[data-auth-shell]").forEach((shell) => {
+        // The login page keeps login/signup in one template and swaps panels in
+        // place while keeping the URL mode parameter in sync.
         const tabs = Array.from(shell.querySelectorAll("[data-auth-tab]"));
         const panels = Array.from(shell.querySelectorAll("[data-auth-form-panel]"));
         const formStage = shell.querySelector("[data-auth-form-stage]");
@@ -266,6 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll("[data-photo-capture-root]").forEach((root) => {
+        // Add-supply and profile screens share this upload/camera controller so
+        // image preview, capture, and fallback behavior stay consistent.
         const form = root.closest("form");
         const modeInput = root.querySelector("[data-capture-mode-input]");
         const capturedInput = root.querySelector("[data-captured-photo]");
@@ -390,6 +396,8 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const capturePhoto = () => {
+            // Captures are downscaled in the browser to keep image sizes
+            // reasonable before they reach the server-side upload checks.
             if (!video || !capturedInput || !previewTarget || !video.videoWidth || !video.videoHeight) {
                 setStatus("Wait for the camera preview to load before capturing.");
                 return;
@@ -475,6 +483,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll("[data-video-shell]").forEach((shell) => {
+        // The landing page crossfades two background videos instead of relying
+        // on a single looping asset, which makes the transition less abrupt.
         const videos = Array.from(shell.querySelectorAll("[data-bg-video]"));
         if (!videos.length) {
             return;

@@ -10,6 +10,8 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    # Login and self-signup share one route so the landing page can swap panels
+    # without duplicating form templates or redirect logic.
     next_url = request.args.get("next") or request.form.get("next")
     active_auth_panel = request.args.get("mode", "login")
     allow_self_signup = current_app.config["ALLOW_SELF_SIGNUP"]
@@ -60,6 +62,8 @@ def login():
                 db.session.add(user)
                 db.session.commit()
 
+                # Clearing the session before login avoids carrying any stale
+                # anonymous-session data into the authenticated session.
                 session.clear()
                 session.permanent = True
                 login_user(user)
@@ -101,6 +105,8 @@ def login():
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    # Logout always clears the Flask-Login state and the session-backed CSRF
+    # token in one step.
     logout_user()
     session.clear()
     flash("You have been signed out.", "success")

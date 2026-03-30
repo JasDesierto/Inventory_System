@@ -1,6 +1,8 @@
 const restockDataNode = document.getElementById("restock-data");
 
 if (restockDataNode) {
+    // Restock follows the same picker/preview pattern as issue, with category
+    // filtering layered in because incoming stock is often processed in batches.
     const items = JSON.parse(restockDataNode.textContent || "[]");
     const categoryFilter = document.getElementById("restock-category-filter");
     const categorySelect = document.getElementById("restock-category");
@@ -89,6 +91,8 @@ if (restockDataNode) {
                 </dl>
             </div>
         `;
+        // Changing the selected supply updates the category field unless the
+        // operator already picked a manual override for the current item.
         hiddenInput.value = item.id;
         if (item.id !== lastPreviewSupplyId && categorySelect) {
             categorySelect.value = item.category;
