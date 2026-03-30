@@ -59,12 +59,6 @@ def _inventory_audit_owner(*, exclude_user_id=None):
     if not admins:
         return None
 
-    preferred_username = (current_app.config.get("SEED_ADMIN_USERNAME") or "").strip().lower()
-    if preferred_username:
-        for admin in admins:
-            if (admin.username or "").strip().lower() == preferred_username:
-                return admin
-
     return admins[0]
 
 

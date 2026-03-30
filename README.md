@@ -84,7 +84,7 @@ Local storage locations:
 
 Notes:
 
-- `flask seed` prints generated credentials for accounts that did not already exist
+- `flask seed` prints the generated admin credential when the bootstrap account did not already exist
 - After the first successful startup, set `AUTO_SEED_ON_START=0` unless automatic startup seeding is still required
 - Use `127.0.0.1` if the app should only be accessible on one machine
 - Use `0.0.0.0` only when the app must be reachable from other devices on the local network
@@ -99,11 +99,9 @@ Important settings used by this project:
 - `SESSION_COOKIE_SECURE`: must be `1` in production
 - `TRUSTED_HOSTS`: required in production
 - `ALLOW_SELF_SIGNUP`: controls whether new staff can register from the login page
-- `AUTO_SEED_ON_START`: seeds default users and sample data when the database is empty
+- `AUTO_SEED_ON_START`: seeds the bootstrap admin account and sample data when the database is empty
 - `PROXY_FIX_X_FOR`, `PROXY_FIX_X_PROTO`, `PROXY_FIX_X_HOST`, `PROXY_FIX_X_PORT`, `PROXY_FIX_X_PREFIX`: trusted reverse-proxy header counts
-- `SEED_ADMIN_USERNAME`, `SEED_ADMIN_PASSWORD`
-- `SEED_ERLA_USERNAME`, `SEED_ERLA_PASSWORD`
-- `SEED_APRIL_USERNAME`, `SEED_APRIL_PASSWORD`
+- `SEED_ADMIN_PASSWORD`: optional password for the bootstrap `admin` account
 - `PORT`: listening port used by Waitress and container deployments
 
 ## Default Accounts And Seeding
@@ -119,15 +117,13 @@ Available commands:
 
 Seeding behavior:
 
-- Creates or updates the configured admin and staff seed users
+- Creates or updates the bootstrap `admin` account
 - Adds sample supplies only when the inventory table is empty
-- Prints generated passwords for newly created accounts when a password was not supplied through environment variables
+- Prints the generated admin password when one was not supplied through environment variables
 
-For predictable credentials, define:
+For predictable bootstrap credentials, define:
 
 - `SEED_ADMIN_PASSWORD`
-- `SEED_ERLA_PASSWORD`
-- `SEED_APRIL_PASSWORD`
 
 ## Production Deployment
 
@@ -191,7 +187,7 @@ Run:
 docker run --env-file .env -p 8000:8000 -v office_inventory_instance:/app/instance office-inventory
 ```
 
-Initialize the database and seed the first accounts before opening the service to users:
+Initialize the database and seed the bootstrap admin account before opening the service to users:
 
 ```bash
 docker run --rm --env-file .env -v office_inventory_instance:/app/instance office-inventory flask --app run:app init-db

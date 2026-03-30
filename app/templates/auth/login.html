@@ -140,9 +140,9 @@
             {% else %}
                 <p>No users exist yet.</p>
                 {% if allow_self_signup %}
-                    <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts, or sign up for a staff account here.</p>
+                    <p class="muted">Run <code>flask seed</code> to create the initial admin account, or sign up for a staff account here.</p>
                 {% else %}
-                    <p class="muted">Run <code>flask seed</code> to create the initial admin and staff accounts before deployment.</p>
+                    <p class="muted">Run <code>flask seed</code> to create the initial admin account before deployment.</p>
                 {% endif %}
             {% endif %}
         </div>

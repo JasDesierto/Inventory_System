@@ -5,6 +5,8 @@ from .extensions import db
 from .models import StockTransaction, Supply, User
 from .services.inventory import add_new_supply, issue_supply, restock_supply
 
+DEFAULT_ADMIN_USERNAME = "admin"
+
 
 def _upsert_seed_user(*, username, full_name, role, password=None, update_password=False):
     # Seed users are created idempotently so repeated `flask seed` runs update
@@ -21,74 +23,28 @@ def _upsert_seed_user(*, username, full_name, role, password=None, update_passwo
     return user
 
 
-def _merge_legacy_staff(legacy_user, replacement_user):
-    # Older installs may still have a generic "staff" account. Its historical
-    # ownership is reassigned before the record is removed.
-    Supply.query.filter_by(created_by=legacy_user.id).update({"created_by": replacement_user.id})
-    StockTransaction.query.filter_by(performed_by=legacy_user.id).update(
-        {"performed_by": replacement_user.id}
-    )
-    db.session.delete(legacy_user)
-
-
 def _seed_users(app):
-    # Passwords are generated only for missing accounts unless the environment
-    # explicitly requests an override.
+    # Bootstrap seeding creates a single neutral admin account. Operators can
+    # add real user accounts through the app after first login.
     configured_admin_password = app.config["SEED_ADMIN_PASSWORD"]
-    configured_erla_password = app.config["SEED_ERLA_PASSWORD"]
-    configured_april_password = app.config["SEED_APRIL_PASSWORD"]
-
-    admin_existing = User.query.filter_by(username=app.config["SEED_ADMIN_USERNAME"]).first()
-    erla_existing = User.query.filter_by(username=app.config["SEED_ERLA_USERNAME"]).first()
-    april_existing = User.query.filter_by(username=app.config["SEED_APRIL_USERNAME"]).first()
-
+    admin_existing = User.query.filter_by(username=DEFAULT_ADMIN_USERNAME).first()
     admin_password = configured_admin_password or (None if admin_existing else token_urlsafe(12))
-    erla_password = configured_erla_password or (None if erla_existing else token_urlsafe(12))
-    april_password = configured_april_password or (None if april_existing else token_urlsafe(12))
 
     admin = _upsert_seed_user(
-        username=app.config["SEED_ADMIN_USERNAME"],
-        full_name="Jas Desierto",
+        username=DEFAULT_ADMIN_USERNAME,
+        full_name="Administrator",
         role="admin",
         password=admin_password,
         update_password=bool(configured_admin_password or not admin_existing),
     )
-    erla = _upsert_seed_user(
-        username=app.config["SEED_ERLA_USERNAME"],
-        full_name="Erla",
-        role="staff",
-        password=erla_password,
-        update_password=bool(configured_erla_password or not erla_existing),
-    )
-    april = _upsert_seed_user(
-        username=app.config["SEED_APRIL_USERNAME"],
-        full_name="April",
-        role="staff",
-        password=april_password,
-        update_password=bool(configured_april_password or not april_existing),
-    )
-
-    legacy_staff = User.query.filter_by(username="staff").first()
-    if legacy_staff:
-        if legacy_staff.id == erla.id:
-            legacy_staff.full_name = "Erla"
-            legacy_staff.role = "staff"
-            legacy_staff.username = app.config["SEED_ERLA_USERNAME"]
-            if erla_password and (configured_erla_password or not erla_existing):
-                legacy_staff.set_password(erla_password)
-            erla = legacy_staff
-        else:
-            _merge_legacy_staff(legacy_staff, erla)
 
     db.session.commit()
-    return admin, erla, april, {
+    return admin, {
         "admin": (admin.username, admin_password),
-        "erla": (erla.username, erla_password),
-        "april": (april.username, april_password),
     }
 
 
-def _seed_inventory(admin, erla, april):
+def _seed_inventory(admin):
     # Inventory seed data provides a realistic first-run catalog plus a small
     # transaction history for dashboard and analytics views.
     if Supply.query.count() > 0:
@@ -135,7 +91,7 @@ def _seed_inventory(admin, erla, april):
         supply_id=pens.id,
         quantity=5,
         remarks="Issued to onboarding kits",
-        performed_by=erla,
+        performed_by=admin,
     )
     restock_supply(
         supply_id=paper.id,
@@ -148,7 +104,7 @@ def _seed_inventory(admin, erla, april):
         supply_id=toner.id,
         quantity=2,
         remarks="Distributed to accounting team",
-        performed_by=april,
+        performed_by=admin,
     )
 
 
@@ -160,8 +116,8 @@ def seed_database(app, force=False):
         User.query.delete()
         db.session.commit()
 
-    admin, erla, april, credentials = _seed_users(app)
-    _seed_inventory(admin, erla, april)
+    admin, credentials = _seed_users(app)
+    _seed_inventory(admin)
     return credentials
 
 
