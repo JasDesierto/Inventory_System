@@ -34,6 +34,21 @@ Recommended deployment settings:
 - `PROXY_FIX_X_FOR=1` and `PROXY_FIX_X_PROTO=1` when running behind a reverse proxy that sets forwarded headers
 - `DATABASE_URL` to your production database connection string
 
+### Supabase
+
+For Supabase-hosted Postgres, use the `Session pooler` connection from the Supabase dashboard on port `5432` unless your deployment target supports IPv6 direct connections. The SQLAlchemy URL for this app should look like:
+
+```bash
+DATABASE_URL=postgresql+psycopg2://postgres.<project-ref>:<url-encoded-db-password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+```
+
+Notes:
+
+- The repo now includes `psycopg2-binary` for PostgreSQL connectivity
+- URL-encode the database password before placing it in `DATABASE_URL` if it contains special characters such as `@`, `:`, `/`, or `?`
+- `flask --app run:app init-db` creates the schema in the target Supabase database
+- Existing data in `instance/inventory.db` is not migrated automatically
+
 Production behavior now enforces these guardrails:
 
 - The app refuses to start in production with the default or short `SECRET_KEY`

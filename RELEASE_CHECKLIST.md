@@ -8,7 +8,9 @@
 - Confirm `TRUSTED_HOSTS` contains the exact production hostnames
 - Confirm `ALLOW_SELF_SIGNUP=0` unless public signup is explicitly required
 - Confirm HTTPS is terminated correctly at the edge or proxy
-- Confirm the production database target in `DATABASE_URL`
+- Confirm `DATABASE_URL` points to the intended production database
+- Confirm Supabase connections use the `Session pooler` on port `5432` or an approved direct IPv6 connection
+- Confirm `sslmode=require` is present in `DATABASE_URL`
 - Confirm persistent storage is mounted for `/app/instance`
 - Confirm backups exist for the database and protected uploads
 

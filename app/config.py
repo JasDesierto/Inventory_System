@@ -29,12 +29,22 @@ def _env_list(name):
     return items or None
 
 
+def _default_trusted_hosts():
+    configured_hosts = _env_list("TRUSTED_HOSTS")
+    if configured_hosts:
+        return configured_hosts
+
+    render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+    return [render_hostname] if render_hostname else None
+
+
 class Config:
     APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
     IS_PRODUCTION = APP_ENV == "production"
     APP_NAME = "Office Inventory System"
     SECRET_KEY = os.environ.get("SECRET_KEY") or ("office-inventory-dev-key" if not IS_PRODUCTION else "")
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///inventory.db")
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -53,7 +63,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     PREFERRED_URL_SCHEME = "https" if SESSION_COOKIE_SECURE else "http"
     ALLOW_SELF_SIGNUP = _env_bool("ALLOW_SELF_SIGNUP", not IS_PRODUCTION)
-    TRUSTED_HOSTS = _env_list("TRUSTED_HOSTS")
+    TRUSTED_HOSTS = _default_trusted_hosts()
     PROXY_FIX_X_FOR = _env_int("PROXY_FIX_X_FOR", 0)
     PROXY_FIX_X_PROTO = _env_int("PROXY_FIX_X_PROTO", 0)
     PROXY_FIX_X_HOST = _env_int("PROXY_FIX_X_HOST", 0)
