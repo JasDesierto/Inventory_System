@@ -31,7 +31,6 @@ Office Inventory System is a Flask application for tracking office supplies, sto
 - Waitress/container deployment runs as a non-root user in the provided Docker image
 - Password resets from the CLI use a secure prompt by default or `--password-env`, avoiding command-line password leakage
 
-Documenting these controls does not expose the app by itself. The actual risk comes from publishing secrets, real hostnames, production environment values, or internal-only operational details, which should stay out of version control and public docs.
 
 ## Project Layout
 
