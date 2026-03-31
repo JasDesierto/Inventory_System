@@ -1,8 +1,11 @@
+import os
+
 import click
 from secrets import token_urlsafe
 
 from .extensions import db
 from .models import StockTransaction, Supply, User
+from .security import validate_password_strength
 from .services.inventory import add_new_supply, issue_supply, restock_supply
 
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -178,11 +181,32 @@ def register_cli(app):
 
     @app.cli.command("set-password")
     @click.argument("username")
-    @click.argument("password")
-    def set_password(username, password):
+    @click.option(
+        "--password-env",
+        metavar="ENVVAR",
+        help="Read the new password from the named environment variable instead of exposing it on the command line.",
+    )
+    def set_password(username, password_env):
         user = User.query.filter_by(username=username).first()
         if not user:
             raise click.ClickException(f"User '{username}' was not found.")
+
+        if password_env:
+            password = os.environ.get(password_env)
+            if not password:
+                raise click.ClickException(
+                    f"Environment variable '{password_env}' is not set or is empty."
+                )
+        else:
+            password = click.prompt(
+                "New password",
+                hide_input=True,
+                confirmation_prompt=True,
+            )
+
+        password_error = validate_password_strength(password)
+        if password_error:
+            raise click.ClickException(password_error)
 
         user.set_password(password)
         db.session.commit()

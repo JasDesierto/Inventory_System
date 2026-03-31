@@ -3,7 +3,15 @@ from flask_login import login_required, login_user, logout_user
 
 from .extensions import db
 from .models import User
-from .security import is_safe_redirect_target, validate_password_strength
+from .security import (
+    clear_login_failures,
+    consume_signup_attempt,
+    format_retry_after,
+    is_safe_redirect_target,
+    login_retry_after,
+    register_login_failure,
+    validate_password_strength,
+)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -36,6 +44,25 @@ def login():
             password = request.form.get("signup_password", "")
             signup_full_name = full_name
             signup_username = username
+            retry_after = consume_signup_attempt()
+
+            if retry_after:
+                flash(
+                    f"Too many signup attempts from this connection. Try again in {format_retry_after(retry_after)}.",
+                    "danger",
+                )
+                return (
+                    render_template(
+                        "auth/login.html",
+                        active_auth_panel=active_auth_panel,
+                        has_users=User.query.count() > 0,
+                        login_username=login_username,
+                        next_url=next_url,
+                        signup_full_name=signup_full_name,
+                        signup_username=signup_username,
+                    ),
+                    429,
+                )
 
             existing_user = User.query.filter_by(username=username).first() if username else None
             password_error = validate_password_strength(password)
@@ -76,12 +103,32 @@ def login():
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
             login_username = username
+            retry_after = login_retry_after(username)
+            if retry_after:
+                flash(
+                    f"Too many sign-in attempts. Try again in {format_retry_after(retry_after)}.",
+                    "danger",
+                )
+                return (
+                    render_template(
+                        "auth/login.html",
+                        active_auth_panel=active_auth_panel,
+                        has_users=User.query.count() > 0,
+                        login_username=login_username,
+                        next_url=next_url,
+                        signup_full_name=signup_full_name,
+                        signup_username=signup_username,
+                    ),
+                    429,
+                )
             user = User.query.filter_by(username=username).first()
 
             if not user or not user.check_password(password):
+                register_login_failure(username)
                 flash("Invalid username or password.", "danger")
             else:
                 # Marking the session permanent applies the configured cookie lifetime to authenticated users.
+                clear_login_failures(username)
                 session.clear()
                 session.permanent = True
                 login_user(user)

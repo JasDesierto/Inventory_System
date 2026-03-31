@@ -17,7 +17,7 @@
 ## First Deploy
 
 1. Install dependencies or build the container image.
-2. Apply the production environment variables from `.env.example`.
+2. Apply the production environment variables from `.env.render.example`, not `.env.example`.
 3. Initialize the database with `flask --app run:app init-db`.
 4. Seed the initial accounts with `flask --app run:app seed`.
 5. Start the application with Waitress or the container runtime.
@@ -40,6 +40,9 @@
 - Confirm the app refuses to start if `TRUSTED_HOSTS` is unset in production
 - Confirm the app sends HSTS when deployed behind HTTPS
 - Confirm protected uploads are not served from a public static path
+- Confirm repeated failed logins are throttled
+- Confirm signup throttling works when self-signup is enabled
+- Confirm password resets are performed through secure prompt or environment injection, not positional CLI arguments
 
 ## Rollback
 

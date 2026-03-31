@@ -18,6 +18,21 @@ Office Inventory System is a Flask application for tracking office supplies, sto
 - Optional production database: PostgreSQL via `psycopg2-binary`
 - Production serving: Waitress or any WSGI-compatible host using `wsgi.py`
 
+## Security Features
+
+- Session-backed CSRF protection is enforced for every `POST`, `PUT`, `PATCH`, and `DELETE` request
+- Content Security Policy uses a per-request nonce and the app also sends hardening headers such as `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and related cross-origin protections
+- Production startup fails fast if `SECRET_KEY`, `SESSION_COOKIE_SECURE`, or `TRUSTED_HOSTS` are missing or weak
+- Authentication now includes lightweight throttling for repeated failed sign-in attempts and repeated signup attempts
+- Session cookies are `HttpOnly`, use `SameSite=Lax`, and are marked `Secure` in production
+- Post-login redirects are restricted to same-origin targets
+- Uploaded images are validated by extension and file signature before storage
+- User-uploaded images are stored under `instance/uploads` and served through an authenticated route instead of a public static path
+- Waitress/container deployment runs as a non-root user in the provided Docker image
+- Password resets from the CLI use a secure prompt by default or `--password-env`, avoiding command-line password leakage
+
+Documenting these controls does not expose the app by itself. The actual risk comes from publishing secrets, real hostnames, production environment values, or internal-only operational details, which should stay out of version control and public docs.
+
 ## Project Layout
 
 - `app/__init__.py`: application factory, security headers, extension wiring, startup bootstrapping
@@ -54,6 +69,7 @@ pip install -r requirements.txt
 ## Local Development Setup
 
 Use `.env.example` as the starting point for a local office or developer install.
+It is a development template and should not be reused for production deployment.
 
 This project reads settings directly from process environment variables. It does not load `.env` files automatically in Python code, so for local use you must either:
 
@@ -107,6 +123,8 @@ Important settings used by this project:
 - `ALLOW_SELF_SIGNUP`: controls whether new staff can register from the login page
 - `AUTO_SEED_ON_START`: seeds the bootstrap admin account and sample data when the database is empty
 - `PROXY_FIX_X_FOR`, `PROXY_FIX_X_PROTO`, `PROXY_FIX_X_HOST`, `PROXY_FIX_X_PORT`, `PROXY_FIX_X_PREFIX`: trusted reverse-proxy header counts
+- `AUTH_RATE_LIMIT_ATTEMPTS`, `AUTH_RATE_LIMIT_WINDOW_SECONDS`: failed sign-in threshold and lockout window
+- `SIGNUP_RATE_LIMIT_ATTEMPTS`, `SIGNUP_RATE_LIMIT_WINDOW_SECONDS`: signup-attempt threshold and lockout window
 - `SEED_ADMIN_PASSWORD`: optional password for the bootstrap `admin` account
 - `PORT`: listening port used by Waitress and container deployments
 
@@ -116,6 +134,8 @@ Examples:
 - `TRUSTED_HOSTS=inventory.company.local,inventory`
 - `DATABASE_URL=sqlite:///inventory.db`
 - `DATABASE_URL=postgresql+psycopg2://user:password@db-host:5432/inventory`
+- `AUTH_RATE_LIMIT_ATTEMPTS=5`
+- `SIGNUP_RATE_LIMIT_ATTEMPTS=5`
 
 ## Default Accounts And Seeding
 
@@ -126,13 +146,19 @@ Available commands:
 - `flask --app run:app init-db`
 - `flask --app run:app seed`
 - `flask --app run:app users`
-- `flask --app run:app set-password <username> <password>`
+- `flask --app run:app set-password <username>`
+- `flask --app run:app set-password <username> --password-env ADMIN_PASSWORD`
 
 Seeding behavior:
 
 - Creates or updates the bootstrap `admin` account
 - Adds sample supplies only when the inventory table is empty
 - Prints the generated admin password when one was not supplied through environment variables
+
+Password reset behavior:
+
+- `set-password` now prompts securely by default instead of accepting the password as a positional command-line argument
+- On automated hosts, use `--password-env <ENVVAR>` so the password comes from environment injection rather than shell history
 
 For predictable bootstrap credentials, define:
 
@@ -157,6 +183,10 @@ Recommended production settings:
 - `ALLOW_SELF_SIGNUP=0`
 - `AUTO_SEED_ON_START=0` after initial provisioning
 - `PROXY_FIX_X_FOR=1` and `PROXY_FIX_X_PROTO=1` when running behind a reverse proxy that sets forwarded headers correctly
+- `AUTH_RATE_LIMIT_ATTEMPTS=5`
+- `AUTH_RATE_LIMIT_WINDOW_SECONDS=900`
+- `SIGNUP_RATE_LIMIT_ATTEMPTS=5`
+- `SIGNUP_RATE_LIMIT_WINDOW_SECONDS=3600`
 
 Typical internal example:
 
@@ -170,6 +200,10 @@ ALLOW_SELF_SIGNUP=0
 AUTO_SEED_ON_START=0
 PROXY_FIX_X_FOR=1
 PROXY_FIX_X_PROTO=1
+AUTH_RATE_LIMIT_ATTEMPTS=5
+AUTH_RATE_LIMIT_WINDOW_SECONDS=900
+SIGNUP_RATE_LIMIT_ATTEMPTS=5
+SIGNUP_RATE_LIMIT_WINDOW_SECONDS=3600
 SEED_ADMIN_PASSWORD=replace-with-a-strong-admin-password
 PORT=8000
 ```
@@ -222,6 +256,10 @@ $env:ALLOW_SELF_SIGNUP="0"
 $env:AUTO_SEED_ON_START="0"
 $env:PROXY_FIX_X_FOR="1"
 $env:PROXY_FIX_X_PROTO="1"
+$env:AUTH_RATE_LIMIT_ATTEMPTS="5"
+$env:AUTH_RATE_LIMIT_WINDOW_SECONDS="900"
+$env:SIGNUP_RATE_LIMIT_ATTEMPTS="5"
+$env:SIGNUP_RATE_LIMIT_WINDOW_SECONDS="3600"
 $env:SEED_ADMIN_PASSWORD="replace-with-a-strong-admin-password"
 waitress-serve --listen=127.0.0.1:8000 wsgi:app
 ```
@@ -286,5 +324,6 @@ Recommended operating practice:
 - Run `seed` only during controlled setup, not on every deployment
 - Keep `AUTO_SEED_ON_START=0` after initial provisioning
 - Keep Waitress bound to `127.0.0.1` when a reverse proxy is in front of it
+- Remove any accidentally tracked local databases from source control before release
 - Test the login flow and a sample upload after each deployment
 - Review `RELEASE_CHECKLIST.md` before production rollout or rollback

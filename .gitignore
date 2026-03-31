@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
-instance/inventory.db
+instance/*.db
+instance/*.sqlite
 instance/uploads/
 .venv/
 venv/
