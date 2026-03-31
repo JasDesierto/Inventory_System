@@ -3,6 +3,7 @@ __pycache__/
 instance/*.db
 instance/*.sqlite
 instance/uploads/
+instance/test-runtime/
 .venv/
 venv/
 .env
